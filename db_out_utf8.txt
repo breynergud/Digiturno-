@@ -1,0 +1,9 @@
+﻿ID: 9 | Tipo: general | Codigo: G-1000 | Date: 2026-03-24 12:49:29
+ID: 8 | Tipo: victimas | Codigo: V-003 | Date: 2026-03-24 12:40:55
+ID: 7 | Tipo: empresario | Codigo: E-001 | Date: 2026-03-24 12:40:04
+ID: 6 | Tipo: general | Codigo: G-002 | Date: 2026-03-24 12:39:57
+ID: 5 | Tipo: especial | Codigo: S-002 | Date: 2026-03-24 12:39:44
+ID: 4 | Tipo: victimas | Codigo: V-002 | Date: 2026-03-23 19:57:24
+ID: 3 | Tipo: general | Codigo: G-001 | Date: 2026-03-23 19:53:47
+ID: 2 | Tipo: especial | Codigo: S-001 | Date: 2026-03-23 19:44:31
+ID: 1 | Tipo: victimas | Codigo: V-001 | Date: 2026-03-22 18:22:50
