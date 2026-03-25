@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENA Digiturno — Acceso Coordinador</title>
+    <title>APE Digiturno — Acceso Coordinador</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,7 +11,14 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { sena: { green: '#39a900', dark: '#000', gray: '#707070', light: '#f4f4f4' } },
+                    colors: { 
+                        ape: { 
+                            blue: '#10069f', 
+                            yellow: '#ffb500', 
+                            orange: '#ff671f',
+                            dark: '#0a0455' 
+                        } 
+                    },
                     fontFamily: { sans: ['Montserrat', 'sans-serif'] }
                 }
             }
@@ -19,9 +26,9 @@
     </script>
     <style>
         body {
-            background-color: #f4f4f4;
-            background-image: radial-gradient(#39a900 0.5px, transparent 0.5px);
-            background-size: 24px 24px;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#10069f 0.5px, transparent 0.5px);
+            background-size: 32px 32px;
         }
     </style>
 </head>
@@ -29,44 +36,49 @@
 
     <div class="w-full max-w-md">
         <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-5 shadow-sm border border-gray-100 p-3">
-                <img src="{{ asset('images/logosena.png') }}" alt="SENA" class="w-full h-auto">
+            <div class="inline-flex items-center justify-center bg-white rounded-2xl mb-6 shadow-xl border border-gray-100 px-6 py-2">
+                <div class="text-3xl font-black tracking-tighter text-[#10069f] flex flex-col items-center">
+                    <span class="leading-none">APE</span>
+                    <span class="text-[6px] uppercase tracking-[0.2em] font-bold text-[#ffb500]">Agencia Pública de Empleo</span>
+                </div>
             </div>
             <h1 class="text-3xl font-black text-black uppercase tracking-tight">
-                SENA <span class="text-[#39a900]">Coordinador</span>
+                APE <span class="text-[#ffb500]">Dashboard</span>
             </h1>
-            <p class="text-[#707070] text-xs font-bold uppercase tracking-[0.3em] mt-2">Módulo Administrativo</p>
+            <p class="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Módulo Administrativo</p>
         </div>
 
-        <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-            <h2 class="text-xl font-extrabold text-black mb-1">Acceso Principal</h2>
-            <p class="text-[#707070] text-xs font-semibold mb-8">Ingrese sus credenciales de super-usuario</p>
+        <div class="bg-white rounded-[32px] p-10 shadow-2xl border border-gray-100 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-[#ffb500]"></div>
+            
+            <h2 class="text-2xl font-black text-black mb-1">Acceso Principal</h2>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Credenciales de Coordinador</p>
 
             @if ($errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm font-semibold">
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 rounded-xl px-4 py-3 mb-8 text-sm font-bold">
                     {{ $errors->first() }}
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('coordinador.login.post') }}" class="space-y-5">
+            <form method="POST" action="{{ route('coordinador.login.post') }}" class="space-y-6">
                 @csrf
 
                 <div>
-                    <label class="block text-[11px] font-bold text-[#707070] uppercase tracking-widest mb-2 px-1">
-                        Correo de Coordinador
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">
+                        Correo Institucional
                     </label>
                     <input
                         type="email"
                         name="coor_correo"
                         value="{{ old('coor_correo') }}"
                         required
-                        placeholder="coordinador@sena.gov.co"
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-black font-semibold focus:border-[#39a900] focus:ring-1 focus:ring-[#39a900] outline-none transition-all"
+                        placeholder="coordinador@ape.gov.co"
+                        class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-black font-bold focus:border-[#10069f] focus:ring-4 focus:ring-[#10069f]/5 outline-none transition-all placeholder:text-gray-300"
                     >
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold text-[#707070] uppercase tracking-widest mb-2 px-1">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">
                         Contraseña
                     </label>
                     <input
@@ -74,21 +86,21 @@
                         name="coor_password"
                         required
                         placeholder="••••••••"
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-black font-semibold focus:border-[#39a900] focus:ring-1 focus:ring-[#39a900] outline-none transition-all"
+                        class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-black font-bold focus:border-[#10069f] focus:ring-4 focus:ring-[#10069f]/5 outline-none transition-all placeholder:text-gray-300"
                     >
                 </div>
 
                 <button
                     type="submit"
-                    class="w-full bg-black hover:bg-[#39a900] text-white font-extrabold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 uppercase tracking-widest mt-2"
+                    class="w-full bg-[#0a0455] hover:bg-[#10069f] text-white font-black py-5 rounded-2xl shadow-xl shadow-[#0a0455]/20 transition-all transform active:scale-95 uppercase tracking-widest text-xs mt-4 border-b-4 border-black"
                 >
                     Entrar al Panel
                 </button>
             </form>
         </div>
 
-        <p class="text-center text-[#707070] text-[10px] font-bold uppercase tracking-[0.3em] mt-8">
-            Coordinación — SENA Digiturno
+        <p class="text-center text-gray-400 text-[9px] font-black uppercase tracking-[0.5em] mt-10">
+            Coordinación — APE Digiturno
         </p>
     </div>
 

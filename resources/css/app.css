@@ -8,4 +8,9 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* APE Branding Colors */
+    --color-ape-yellow: #FFB500;
+    --color-ape-blue: #10069F;
+    --color-ape-orange: #FF671F;
 }

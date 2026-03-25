@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENA Digiturno - Pantalla</title>
+    <title>APE Digiturno - Pantalla</title>
     <!-- Tailwind 3.4 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
@@ -11,24 +11,25 @@
         body { font-family: 'Montserrat', sans-serif; overflow: hidden; background-color: #000; }
         .tv-card {
             background: #ffffff;
-            border-left: 12px solid #39a900;
+            border-left: 12px solid #10069f;
             transition: all 0.5s ease;
         }
         .main-call-bg {
-            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
-            border: 4px solid #39a900;
+            background: linear-gradient(135deg, #0a0455 0%, #000000 100%);
+            border: 4px solid #10069f;
         }
         .animate-call {
             animation: highlight-call 2s infinite;
         }
         @keyframes highlight-call {
-            0% { border-color: #39a900; box-shadow: 0 0 0 0 rgba(57, 169, 0, 0.4); }
-            50% { border-color: #fff; box-shadow: 0 0 50px 10px rgba(57, 169, 0, 0.6); }
-            100% { border-color: #39a900; box-shadow: 0 0 0 0 rgba(57, 169, 0, 0.4); }
+            0% { border-color: #10069f; box-shadow: 0 0 0 0 rgba(16, 6, 159, 0.4); }
+            50% { border-color: #ffb500; box-shadow: 0 0 50px 10px rgba(16, 6, 159, 0.6); }
+            100% { border-color: #10069f; box-shadow: 0 0 0 0 rgba(16, 6, 159, 0.4); }
         }
         .news-marquee {
-            background-color: #39a900;
+            background-color: #10069f;
             color: white;
+            border-top: 4px solid #ffb500;
         }
     </style>
 </head>
@@ -37,18 +38,21 @@
     <!-- Header TV Institucional -->
     <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
         <div class="flex items-center space-x-6">
-            <div class="w-16 h-16 bg-white rounded-xl p-2 flex items-center justify-center">
-                <img src="{{ asset('images/logosena.png') }}" alt="SENA" class="w-full">
+            <div class="px-6 py-2 bg-white rounded-xl flex items-center justify-center">
+                 <div class="text-3xl font-black tracking-tighter text-[#10069f] flex flex-col items-center">
+                    <span class="leading-none">APE</span>
+                    <span class="text-[6px] uppercase tracking-[0.2em] font-bold text-[#ffb500]">Agencia Pública de Empleo</span>
+                 </div>
             </div>
             <div>
-                <h1 class="text-4xl font-black tracking-tight uppercase">SENA <span class="text-sena-green text-[#39a900]">DIGITURNO</span></h1>
-                <p class="text-gray-400 font-bold uppercase tracking-[0.4em] text-xs">Centro de Atención Institucional</p>
+                <h1 class="text-4xl font-black tracking-tight uppercase"><span class="text-[#ffb500]">APE</span> <span class="text-[#10069f]">DIGITURNO</span></h1>
+                <p class="text-gray-400 font-bold uppercase tracking-[0.4em] text-xs">Agencia Pública de Empleo - Territorial</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
             <div id="clock" class="text-5xl font-black text-white tabular-nums">00:00:00</div>
             <div id="date" class="text-gray-400 font-bold uppercase tracking-widest text-sm mt-1 mb-2">Cargando fecha...</div>
-            <a href="/" class="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-sena-green transition-colors flex items-center group">
+            <a href="/" class="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-[#ffb500] transition-colors flex items-center group">
                 <svg class="w-3 h-3 mr-1.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 Configuración / Inicio
             </a>
@@ -60,13 +64,13 @@
         
         <!-- Columna Izquierda: Llamado Principal (3/5 del ancho) -->
         <div class="lg:col-span-3 main-call-bg rounded-[3rem] p-10 flex flex-col justify-center items-center text-center shadow-2xl relative overflow-hidden animate-call">
-            <h2 class="text-2xl font-black text-[#39a900] uppercase tracking-[0.2em] mb-4">Llamado Actual</h2>
+            <h2 class="text-2xl font-black text-[#ffb500] uppercase tracking-[0.2em] mb-4">Llamado Actual</h2>
             
             <div id="main-turn-code" class="text-[clamp(10rem,30vw,22rem)] leading-none font-black text-white tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
                 ---
             </div>
             
-            <div class="mt-8 bg-white text-black px-16 py-8 rounded-3xl shadow-2xl border-b-8 border-[#39a900]">
+            <div class="mt-8 bg-white text-black px-16 py-8 rounded-3xl shadow-2xl border-b-8 border-[#ffb500]">
                 <p class="text-xl font-bold uppercase tracking-widest text-gray-500 mb-1">Por favor diríjase a:</p>
                 <div id="main-turn-mesa" class="text-6xl md:text-8xl font-black uppercase tracking-tighter text-black">
                     MESA --
@@ -79,7 +83,7 @@
 
         <!-- Columna Derecha: Otros Turnos Recientes (2/5 del ancho) -->
         <div class="lg:col-span-2 flex flex-col gap-5">
-            <h3 class="text-xl font-black text-white uppercase tracking-widest px-4 mb-1 border-l-4 border-[#39a900]">Últimos Turnos</h3>
+            <h3 class="text-xl font-black text-white uppercase tracking-widest px-4 mb-1 border-l-4 border-[#ffb500]">Últimos Turnos</h3>
             
             <div id="category-container" class="flex flex-col gap-4 overflow-hidden">
                 <!-- Se poblará dinámicamente -->
@@ -93,7 +97,7 @@
     <!-- Footer TV: Barra de Noticias -->
     <div class="mt-10 news-marquee p-5 rounded-2xl shadow-lg border border-white/20">
         <marquee class="text-2xl font-extrabold uppercase tracking-wide">
-            Bienvenido al SENA. Por favor tenga su documento de identidad a la mano. • Los empresarios serán atendidos en la oficina de Coordinación. • Recuerde respetar el orden de llamado. • SENA: Emprendimiento, Empleo y Equidad.
+            Bienvenido a la Agencia Pública de Empleo (APE). Por favor tenga su documento de identidad a la mano. • Explore nuestras vacantes vigentes en el portal oficial. • Recuerde que todos nuestros servicios son gratuitos. • APE: Intermediación laboral transparente y eficiente.
         </marquee>
     </div>
 
@@ -130,13 +134,13 @@
 
                         const card = document.createElement('div');
                         card.className = "tv-card rounded-2xl p-6 flex justify-between items-center text-black shadow-lg";
-                        card.style.borderLeftColor = '#39a900';
+                        card.style.borderLeftColor = '#10069f';
                         
                         const labels = {
                             'victimas': 'Víctimas',
                             'especial': 'Especial',
                             'general': 'General',
-                            'empresario': 'Empresario'
+                            'empresario': 'Empresas'
                         };
 
                         card.innerHTML = `
@@ -144,11 +148,48 @@
                                 <h3 class="text-2xl font-black uppercase tracking-tight text-gray-400 mb-0.5">${labels[turn.tipo_atencion] || turn.tipo_atencion}</h3>
                                 <p class="text-lg font-bold text-black uppercase tracking-widest">Mesa ${turn.mesa}</p>
                             </div>
-                            <div class="text-6xl font-black text-[#39a900] tabular-nums">${turn.codigo_turno}</div>
+                            <div class="text-6xl font-black text-[#10069f] tabular-nums">${turn.codigo_turno}</div>
                         `;
                         container.appendChild(card);
                     }
                 });
+
+                // Si no hay turnos pendientes, mostrar mensaje
+                if (turns.length === 0) {
+                    container.innerHTML = `
+                        <div class="tv-card rounded-2xl p-6 flex justify-between items-center text-black opacity-50">
+                            <p class="font-bold text-gray-400 uppercase tracking-widest italic">Sin turnos en espera...</p>
+                        </div>`;
+                }
+
+                // Actualizar panel principal con el turno más reciente pendiente
+                if (newestTurn) {
+                    const mainCode = document.getElementById('main-turn-code');
+                    const mainMesa = document.getElementById('main-turn-mesa');
+                    
+                    if (mainCode.innerText !== newestTurn.codigo_turno) {
+                        mainCode.style.opacity = '0';
+                        setTimeout(() => {
+                            mainCode.innerText = newestTurn.codigo_turno;
+                            mainMesa.innerText = 'MESA ' + newestTurn.mesa;
+                            mainCode.style.transition = 'opacity 0.5s';
+                            mainCode.style.opacity = '1';
+                        }, 300);
+                    }
+                } else {
+                    // No hay turnos pendientes: limpiar panel
+                    const mainCode = document.getElementById('main-turn-code');
+                    const mainMesa = document.getElementById('main-turn-mesa');
+                    mainCode.innerText = '---';
+                    mainMesa.innerText = 'MESA --';
+                }
+
+                firstLoad = false;
+            } catch (err) {
+                console.error("Error fetching turns:", err);
+            }
+        }
+
 
                 // Si no hay turnos pendientes, mostrar mensaje
                 if (turns.length === 0) {
