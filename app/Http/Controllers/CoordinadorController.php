@@ -9,6 +9,7 @@ use App\Models\TurnoUnificado;
 use App\Models\Atencion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class CoordinadorController extends Controller
@@ -32,11 +33,9 @@ class CoordinadorController extends Controller
             'coor_password' => 'required|string',
         ]);
 
-        $coor = Coordinador::where('coor_correo', $request->coor_correo)
-                         ->where('coor_password', $request->coor_password)
-                         ->first();
-
-        if (! $coor) {
+        $coor = Coordinador::where('coor_correo', $request->coor_correo)->first();
+                         
+        if (! $coor || ! Hash::check($request->coor_password, $coor->coor_password)) {
             return back()->withErrors(['coor_correo' => 'Credenciales incorrectas.'])->withInput();
         }
 

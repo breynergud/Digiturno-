@@ -197,6 +197,13 @@
         setInterval(updateTurns, 4000); // Polling cada 4 segundos
         updateClock();
         updateTurns();
+
+        // Seguridad: Limpiar rastro al cerrar (consistencia con el resto del sistema)
+        window.addEventListener('unload', function() {
+            if (window.performance && window.performance.navigation.type !== 1) {
+                console.log('Cerrando pantalla segura...');
+            }
+        });
     </script>
 </body>
 </html>

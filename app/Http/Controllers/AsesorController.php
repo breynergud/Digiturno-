@@ -9,6 +9,7 @@ use App\Models\TurnoUnificado;
 use App\Models\Atencion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AsesorController extends Controller
 {
@@ -31,11 +32,9 @@ class AsesorController extends Controller
             'ase_password' => 'required|string',
         ]);
 
-        $asesor = Asesor::where('ase_correo', $request->ase_correo)
-                        ->where('ase_password', $request->ase_password)
-                        ->first();
-
-        if (! $asesor) {
+        $asesor = Asesor::where('ase_correo', $request->ase_correo)->first();
+                        
+        if (! $asesor || ! Hash::check($request->ase_password, $asesor->ase_password)) {
             return back()->withErrors(['ase_correo' => 'Credenciales incorrectas.'])->withInput();
         }
 
