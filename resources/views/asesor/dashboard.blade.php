@@ -656,6 +656,15 @@
 
         // Iniciar polling cada 5 segundos
         setInterval(refreshPollData, 5000);
+
+        // Cerrar sesión al cerrar la pestaña/navegador
+        window.addEventListener('unload', function() {
+            const isRefresh = window.performance && window.performance.navigation.type === 1;
+            if (!isRefresh) {
+                const blob = new Blob([JSON.stringify({ _token: CSRF })], { type: 'application/json' });
+                navigator.sendBeacon('{{ route("asesor.logout") }}', blob);
+            }
+        });
     </script>
 </body>
 </html>
