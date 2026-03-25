@@ -19,7 +19,7 @@ class TurnoController extends Controller
             'numero_documento' => 'required|string',
             'pers_nombres' => 'nullable|string',
             'pers_apellidos' => 'nullable|string',
-            'telefono' => 'required|string',
+            'telefono' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -57,7 +57,7 @@ class TurnoController extends Controller
                 default => 'General',
             };
 
-            // Para obtener el último número, buscamos en la tabla unificada
+            // Buscamos el último número generado HOY para que su turno vuelva a 0 sin borrar los datos anteriores de la base 
             $ultimoTurnoEspecifico = TurnoUnificado::where('tur_numero', 'like', $prefijo . '-%')
                 ->whereDate('tur_hora_fecha', today())
                 ->orderBy('tur_id', 'desc')

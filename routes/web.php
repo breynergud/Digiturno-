@@ -25,9 +25,9 @@ Route::get('/asesor/persona',             [AsesorController::class, 'personaDeta
 Route::post('/asesor/persona/update',      [AsesorController::class, 'updatePersona'])->name('asesor.persona.update');
 
 // ── Rutas del Coordinador (Super Admin) ───────────────────────────────────
-Route::prefix('coordinador')->group(function () {
-    Route::get('/login',             [CoordinadorController::class, 'showLogin'])->name('coordinador.login');
-    Route::post('/login',            [CoordinadorController::class, 'login'])->name('coordinador.login.post');
+Route::prefix('coordinador')->middleware(['coordinador.inactividad'])->group(function () {
+    Route::get('/login',             [CoordinadorController::class, 'showLogin'])->name('coordinador.login')->withoutMiddleware(['coordinador.inactividad']);
+    Route::post('/login',            [CoordinadorController::class, 'login'])->name('coordinador.login.post')->withoutMiddleware(['coordinador.inactividad']);
     Route::post('/logout',           [CoordinadorController::class, 'logout'])->name('coordinador.logout');
     Route::get('/dashboard',         [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
     Route::get('/api/estado',        [CoordinadorController::class, 'apiEstado'])->name('coordinador.api.estado');

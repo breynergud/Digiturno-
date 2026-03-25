@@ -36,24 +36,24 @@
 <body class="min-h-screen flex flex-col p-6 lg:p-10 text-white">
 
     <!-- Header TV Institucional -->
-    <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
-        <div class="flex items-center space-x-6">
-            <div class="px-6 py-2 bg-white rounded-xl flex items-center justify-center">
-                 <div class="text-3xl font-black tracking-tighter text-[#10069f] flex flex-col items-center">
+    <div class="flex justify-between items-center mb-8 border-b-2 border-white/10 pb-8">
+        <div class="flex items-center space-x-8">
+            <div class="px-8 py-3 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+                 <div class="text-4xl font-black tracking-tighter text-[#10069f] flex flex-col items-center">
                     <span class="leading-none">APE</span>
-                    <span class="text-[6px] uppercase tracking-[0.2em] font-bold text-[#ffb500]">Agencia Pública de Empleo</span>
+                    <span class="text-[8px] uppercase tracking-[0.3em] font-bold text-[#ffb500]">Agencia Pública de Empleo</span>
                  </div>
             </div>
             <div>
-                <h1 class="text-4xl font-black tracking-tight uppercase"><span class="text-[#ffb500]">APE</span> <span class="text-[#10069f]">DIGITURNO</span></h1>
-                <p class="text-gray-400 font-bold uppercase tracking-[0.4em] text-xs">Agencia Pública de Empleo - Territorial</p>
+                <h1 class="text-5xl font-black tracking-tight uppercase"><span class="text-[#ffb500]">APE</span> <span class="text-[#10069f]">DIGITURNO</span></h1>
+                <p class="text-gray-400 font-bold uppercase tracking-[0.5em] text-sm mt-1">Agencia Pública de Empleo - Territorial</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
-            <div id="clock" class="text-5xl font-black text-white tabular-nums">00:00:00</div>
-            <div id="date" class="text-gray-400 font-bold uppercase tracking-widest text-sm mt-1 mb-2">Cargando fecha...</div>
-            <a href="/" class="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-[#ffb500] transition-colors flex items-center group">
-                <svg class="w-3 h-3 mr-1.5 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <div id="clock" class="text-7xl font-black text-white tabular-nums drop-shadow-lg">00:00:00</div>
+            <div id="date" class="text-gray-400 font-bold uppercase tracking-widest text-lg mt-1 mb-2">Cargando fecha...</div>
+            <a href="/" class="text-xs font-black uppercase tracking-widest text-white/20 hover:text-[#ffb500] transition-colors flex items-center group">
+                <svg class="w-4 h-4 mr-2 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 Configuración / Inicio
             </a>
         </div>
@@ -66,7 +66,7 @@
         <div class="lg:col-span-3 main-call-bg rounded-[3rem] p-10 flex flex-col justify-center items-center text-center shadow-2xl relative overflow-hidden animate-call">
             <h2 class="text-2xl font-black text-[#ffb500] uppercase tracking-[0.2em] mb-4">Llamado Actual</h2>
             
-            <div id="main-turn-code" class="text-[clamp(10rem,30vw,22rem)] leading-none font-black text-white tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+            <div id="main-turn-code" class="text-[clamp(6rem,12vw,15rem)] leading-none font-black text-white tracking-tight drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] w-full overflow-hidden text-ellipsis px-2">
                 ---
             </div>
             
@@ -95,8 +95,8 @@
     </div>
 
     <!-- Footer TV: Barra de Noticias -->
-    <div class="mt-10 news-marquee p-5 rounded-2xl shadow-lg border border-white/20">
-        <marquee class="text-2xl font-extrabold uppercase tracking-wide">
+    <div class="mt-8 news-marquee p-6 rounded-2xl shadow-lg border border-white/20">
+        <marquee class="text-3xl font-extrabold uppercase tracking-wide">
             Bienvenido a la Agencia Pública de Empleo (APE). Por favor tenga su documento de identidad a la mano. • Explore nuestras vacantes vigentes en el portal oficial. • Recuerde que todos nuestros servicios son gratuitos. • APE: Intermediación laboral transparente y eficiente.
         </marquee>
     </div>
@@ -145,51 +145,14 @@
 
                         card.innerHTML = `
                             <div>
-                                <h3 class="text-2xl font-black uppercase tracking-tight text-gray-400 mb-0.5">${labels[turn.tipo_atencion] || turn.tipo_atencion}</h3>
-                                <p class="text-lg font-bold text-black uppercase tracking-widest">Mesa ${turn.mesa}</p>
+                                <h3 class="text-3xl font-black uppercase tracking-tight text-gray-400 mb-1">${labels[turn.tipo_atencion] || turn.tipo_atencion}</h3>
+                                <p class="text-xl font-bold text-black uppercase tracking-widest">Mesa ${turn.mesa}</p>
                             </div>
-                            <div class="text-6xl font-black text-[#10069f] tabular-nums">${turn.codigo_turno}</div>
+                            <div class="text-7xl font-black text-[#10069f] tabular-nums">${turn.codigo_turno}</div>
                         `;
                         container.appendChild(card);
                     }
                 });
-
-                // Si no hay turnos pendientes, mostrar mensaje
-                if (turns.length === 0) {
-                    container.innerHTML = `
-                        <div class="tv-card rounded-2xl p-6 flex justify-between items-center text-black opacity-50">
-                            <p class="font-bold text-gray-400 uppercase tracking-widest italic">Sin turnos en espera...</p>
-                        </div>`;
-                }
-
-                // Actualizar panel principal con el turno más reciente pendiente
-                if (newestTurn) {
-                    const mainCode = document.getElementById('main-turn-code');
-                    const mainMesa = document.getElementById('main-turn-mesa');
-                    
-                    if (mainCode.innerText !== newestTurn.codigo_turno) {
-                        mainCode.style.opacity = '0';
-                        setTimeout(() => {
-                            mainCode.innerText = newestTurn.codigo_turno;
-                            mainMesa.innerText = 'MESA ' + newestTurn.mesa;
-                            mainCode.style.transition = 'opacity 0.5s';
-                            mainCode.style.opacity = '1';
-                        }, 300);
-                    }
-                } else {
-                    // No hay turnos pendientes: limpiar panel
-                    const mainCode = document.getElementById('main-turn-code');
-                    const mainMesa = document.getElementById('main-turn-mesa');
-                    mainCode.innerText = '---';
-                    mainMesa.innerText = 'MESA --';
-                }
-
-                firstLoad = false;
-            } catch (err) {
-                console.error("Error fetching turns:", err);
-            }
-        }
-
 
                 // Si no hay turnos pendientes, mostrar mensaje
                 if (turns.length === 0) {

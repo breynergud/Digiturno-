@@ -51,12 +51,24 @@ Sigue estos pasos para poner en marcha el proyecto en tu entorno local:
    pnpm run dev
    ```
 
-7. **Acceso:**
-   - **Página Principal (Turnos):** `http://laravel-pb.test/digiturno`
-   - **Pantalla TV:** `http://laravel-pb.test/digiturno/tv`
-   - **Panel Asesor:** `http://laravel-pb.test/asesor/login`
-   - **Panel Coordinador:** `http://laravel-pb.test/coordinador/login`
+- **Página Principal (Turnos):** `http://laravel-pb.test/digiturno`
+- **Pantalla TV:** `http://laravel-pb.test/digiturno/tv`
+- **Panel Asesor:** `http://laravel-pb.test/asesor/login`
+- **Panel Coordinador:** `http://laravel-pb.test/coordinador/login`
 
-## 👥 Credenciales de Prueba
-- **Asesor:** `asesor1@sena.gov.co` / `asesor123`
-- **Coordinador:** `coordinador@sena.gov.co` / `coord123`
+## 🛠️ Configuraciones de Estabilidad y Reset Diario
+
+Para garantizar que los turnos se reinicien a **001** cada mañana automáticamente:
+
+1. **Zona Horaria**: Se debe configurar `APP_TIMEZONE=America/Bogota` en el archivo `.env`. Esto asegura que el "hoy" de Laravel coincida con la medianoche de Colombia.
+2. **Reinicio de Contador**: El controlador `TurnoController` busca el último turno del día actual. Si no hay registros de hoy, el contador vuelve a empezar en 1.
+3. **Persistencia de Datos**: Los registros anteriores **no se borran**. Permanecen en la base de datos para reportes estadísticos semanales y mensuales del coordinador.
+
+## ⌨️ Soporte Híbrido (Kiosco)
+
+El formulario de registro permite el uso simultáneo de:
+- **Pantalla Táctil**: Teclado virtual integrado.
+- **Teclado Físico y Mouse**: Ideal para estaciones de prueba o administración rápida.
+
+---
+*Agencia Pública de Empleo - SENA Regional Distrito Capital*
