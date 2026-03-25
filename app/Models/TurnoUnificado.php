@@ -9,7 +9,7 @@ class TurnoUnificado extends Model
 {
     use HasFactory;
     
-    protected $table = 'TURNO';
+    protected $table = 'turno';
     protected $primaryKey = 'tur_id';
     public $timestamps = false;
     

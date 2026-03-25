@@ -9,7 +9,7 @@ class Asesor extends Model
 {
     use HasFactory;
 
-    protected $table = 'ASESOR';
+    protected $table = 'asesor';
     protected $primaryKey = 'ase_id';
     public $timestamps = false;
 

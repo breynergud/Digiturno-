@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('TURNO', function (Blueprint $table) {
+        Schema::create('turno', function (Blueprint $table) {
             $table->id('tur_id');
             $table->dateTime('tur_hora_fecha');
             $table->string('tur_numero', 45);
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('USUARIO_user_id')->nullable();
 
             $table->foreign('USUARIO_user_id')
-                  ->references('user_id')->on('USUARIO')
+                  ->references('user_id')->on('usuario')
                   ->onDelete('cascade');
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('TURNO');
+        Schema::dropIfExists('turno');
     }
 };

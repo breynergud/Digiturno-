@@ -52,7 +52,8 @@ class TurnoController extends Controller
 
             $tur_tipo = match ($request->tipo_atencion) {
                 'victimas' => 'Victimas',
-                'especial', 'empresario' => 'Prioritario',
+                'empresario' => 'Empresario',
+                'especial' => 'Prioritario',
                 default => 'General',
             };
 

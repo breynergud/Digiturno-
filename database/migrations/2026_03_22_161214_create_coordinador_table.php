@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('COORDINADOR', function (Blueprint $table) {
+        Schema::create('coordinador', function (Blueprint $table) {
             $table->id('coor_id');
             $table->string('coor_vigencia', 45)->nullable();
+            $table->string('coor_correo', 45)->unique()->nullable();
+            $table->string('coor_password', 45)->nullable();
+            $table->enum('coor_estado', ['disponible', 'ocupado'])->default('disponible');
             $table->integer('PERSONA_pers_doc');
             
-            $table->foreign('PERSONA_pers_doc')->references('pers_doc')->on('PERSONA');
+            $table->foreign('PERSONA_pers_doc')->references('pers_doc')->on('persona');
         });
     }
 
@@ -25,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('COORDINADOR');
+        Schema::dropIfExists('coordinador');
     }
 };

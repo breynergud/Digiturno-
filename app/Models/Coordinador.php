@@ -10,12 +10,15 @@ class Coordinador extends Model
 {
     use HasFactory;
 
-    protected $table = 'COORDINADOR';
+    protected $table = 'coordinador';
     protected $primaryKey = 'coor_id';
     public $timestamps = false;
 
     protected $fillable = [
         'coor_vigencia',
+        'coor_correo',
+        'coor_password',
+        'coor_estado',
         'PERSONA_pers_doc',
     ];
 

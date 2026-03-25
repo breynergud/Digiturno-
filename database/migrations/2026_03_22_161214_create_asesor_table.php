@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ASESOR', function (Blueprint $table) {
+        Schema::create('asesor', function (Blueprint $table) {
             $table->id('ase_id');
             $table->string('ase_nrocontrato', 45)->nullable();
             $table->string('ase_tipo_asesor', 2)->nullable();
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('ase_password', 45)->nullable();
             $table->string('ase_correo', 45)->nullable();
             
-            $table->foreign('PERSONA_pers_doc')->references('pers_doc')->on('PERSONA');
+            $table->foreign('PERSONA_pers_doc')->references('pers_doc')->on('persona');
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ASESOR');
+        Schema::dropIfExists('asesor');
     }
 };

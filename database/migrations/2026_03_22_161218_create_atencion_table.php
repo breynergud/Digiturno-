@@ -11,21 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ATENCION', function (Blueprint $table) {
+        Schema::create('atencion', function (Blueprint $table) {
             $table->id('atnc_id');
             $table->dateTime('atnc_hora_inicio');
             $table->dateTime('atnc_hora_fin')->nullable();
             $table->enum('atnc_tipo', ['General', 'Prioritaria', 'Victimas']);
             
             $table->unsignedBigInteger('ASESOR_ase_id')->nullable();
+            $table->unsignedBigInteger('COORDINADOR_coor_id')->nullable();
             $table->unsignedBigInteger('TURNO_tur_id')->nullable();
 
             $table->foreign('ASESOR_ase_id')
-                  ->references('ase_id')->on('ASESOR')
+                  ->references('ase_id')->on('asesor')
                   ->onDelete('cascade');
                   
             $table->foreign('TURNO_tur_id')
-                  ->references('tur_id')->on('TURNO')
+                  ->references('tur_id')->on('turno')
+                  ->onDelete('cascade');
+
+            $table->foreign('COORDINADOR_coor_id')
+                  ->references('coor_id')->on('coordinador')
                   ->onDelete('cascade');
         });
     }
@@ -35,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ATENCION');
+        Schema::dropIfExists('atencion');
     }
 };
