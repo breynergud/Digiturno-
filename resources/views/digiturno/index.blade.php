@@ -57,6 +57,18 @@
             70% { box-shadow: 0 0 0 20px rgba(16, 6, 159, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 6, 159, 0); }
         }
+        
+        /* Teclado en pantalla */
+        .key-btn {
+            @apply flex items-center justify-center bg-white border border-gray-200 rounded-2xl shadow-sm hover:border-ape-blue hover:text-ape-blue active:scale-95 transition-all font-black text-xl aspect-square size-full;
+        }
+        
+        /* Ajustes para pantallas gigantes (40"+) */
+        @media (min-width: 2000px) {
+            html { font-size: 24px; }
+            .max-w-5xl { max-w-7xl; }
+            .max-w-lg { max-w-2xl; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 relative">
@@ -121,44 +133,68 @@
         </div>
 
         <!-- PASO 2: FORMULARIO DE REGISTRO -->
-        <div id="step-2" class="step-container hidden opacity-0 translate-y-8 w-full max-w-lg mx-auto">
-            <div class="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100">
+        <div id="step-2" class="step-container hidden opacity-0 translate-y-8 w-full max-w-lg mx-auto pb-20">
+            <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100">
                 <button onclick="goBack()" class="mb-8 text-ape-gray hover:text-ape-blue transition-colors flex items-center text-xs font-bold uppercase tracking-widest group">
                     <svg class="w-4 h-4 mr-1 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     Regresar
                 </button>
 
-                <div class="mb-10">
-                    <h2 class="text-2xl font-extrabold text-ape-dark mb-2">Información del Solicitante</h2>
-                    <div class="inline-block bg-ape-blue/5 text-ape-blue font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-wider border border-ape-blue/10" id="type-badge">
+                <div class="mb-8 text-center sm:text-left">
+                    <h2 class="text-3xl font-black text-ape-dark mb-2">Registro de Turno</h2>
+                    <div class="inline-block bg-ape-blue text-white font-black px-6 py-1.5 rounded-full text-[10px] uppercase tracking-widest" id="type-badge">
                         Tipo de Turno
                     </div>
                 </div>
 
-                <form id="turno-form" class="space-y-6">
+                <form id="turno-form" class="space-y-8">
                     <input type="hidden" name="tipo_atencion" id="tipo_atencion_hidden">
                     
-                    <div>
-                        <label class="block text-[11px] font-bold text-ape-gray uppercase tracking-widest mb-2 px-1">Tipo de Documento</label>
-                        <select name="pers_tipodoc" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-ape-dark font-semibold focus:border-ape-blue focus:ring-1 focus:ring-ape-blue outline-none transition-all appearance-none cursor-pointer">
-                            <option value="CC">Cédula de Ciudadanía</option>
-                            <option value="TI">Tarjeta de Identidad</option>
-                            <option value="CE">Cédula de Extranjería</option>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-span-full">
+                            <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Número de Documento</label>
+                            <input type="text" name="numero_documento" id="input_doc" required readonly 
+                                placeholder="Toque los números abajo" 
+                                class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-2xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
+                        </div>
+
+                        <div class="col-span-full">
+                            <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Teléfono (opcional)</label>
+                            <input type="tel" name="telefono" id="input_tel" readonly 
+                                placeholder="Seleccione campo para escribir" 
+                                class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
+                        </div>
+                    </div>
+
+                    <!-- TECLADO NUMÉRICO -->
+                    <div class="grid grid-cols-3 gap-3 p-2 bg-gray-50 rounded-[2rem] border border-gray-100 max-w-sm mx-auto shadow-inner">
+                        <button type="button" onclick="pressKey('1')" class="key-btn">1</button>
+                        <button type="button" onclick="pressKey('2')" class="key-btn">2</button>
+                        <button type="button" onclick="pressKey('3')" class="key-btn">3</button>
+                        <button type="button" onclick="pressKey('4')" class="key-btn">4</button>
+                        <button type="button" onclick="pressKey('5')" class="key-btn">5</button>
+                        <button type="button" onclick="pressKey('6')" class="key-btn">6</button>
+                        <button type="button" onclick="pressKey('7')" class="key-btn">7</button>
+                        <button type="button" onclick="pressKey('8')" class="key-btn">8</button>
+                        <button type="button" onclick="pressKey('9')" class="key-btn">9</button>
+                        <button type="button" onclick="deleteKey()" class="key-btn text-red-500 bg-red-50 border-red-100">
+                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+                        </button>
+                        <button type="button" onclick="pressKey('0')" class="key-btn">0</button>
+                        <button type="button" onclick="clearKeys()" class="key-btn text-gray-400 text-sm">Borrar</button>
+                    </div>
+
+                    <div class="pt-4">
+                        <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Documento</label>
+                        <select name="pers_tipodoc" required class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
+                            <option value="CC">Cédula CC</option>
+                            <option value="TI">Tarjeta TI</option>
+                            <option value="CE">Cédula Ext.</option>
                             <option value="PEP">PEP</option>
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-ape-gray uppercase tracking-widest mb-2 px-1">Número de Documento</label>
-                        <input type="text" name="numero_documento" required placeholder="Ingrese su documento" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-ape-dark font-semibold focus:border-ape-blue focus:ring-1 focus:ring-ape-blue outline-none transition-all">
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-ape-gray uppercase tracking-widest mb-2 px-1">Teléfono de Contacto</label>
-                        <input type="tel" name="telefono" required placeholder="Ej: 310 000 0000" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-ape-dark font-semibold focus:border-ape-blue focus:ring-1 focus:ring-ape-blue outline-none transition-all">
-                    </div>
-
-                    <button type="submit" id="submit-btn" class="w-full bg-ape-blue hover:bg-ape-dark text-white font-extrabold py-5 rounded-xl shadow-lg shadow-blue-100 transition-all transform active:scale-95 uppercase tracking-widest flex justify-center items-center mt-4 border-b-4 border-ape-dark">
+                    <button type="submit" id="submit-btn" class="w-full bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-6 rounded-[1.5rem] shadow-xl shadow-blue-200 transition-all transform active:scale-95 uppercase tracking-[0.2em] text-sm flex justify-center items-center mt-6 border-b-4 border-[#0a0455]">
                         <span id="btn-text">Generar mi Turno</span>
                         <div id="btn-loader" class="hidden animate-spin h-5 w-5 border-3 border-white border-t-transparent rounded-full ml-3"></div>
                     </button>
@@ -202,6 +238,32 @@
 
     <!-- Scripts -->
     <script>
+        let focusedInput = 'input_doc';
+        
+        // Manejar enfoque táctil simulado
+        document.getElementById('input_doc').addEventListener('focus', () => focusedInput = 'input_doc');
+        document.getElementById('input_tel').addEventListener('focus', () => focusedInput = 'input_tel');
+        
+        // Evitar que el teclado físico nativo se abra (si es teclado táctil puro)
+        // Pero mantendremos el foco para la UI
+        
+        function pressKey(num) {
+            const input = document.getElementById(focusedInput);
+            if (input.value.length < (focusedInput === 'input_doc' ? 12 : 10)) {
+                input.value += num;
+            }
+        }
+        
+        function deleteKey() {
+            const input = document.getElementById(focusedInput);
+            input.value = input.value.slice(0, -1);
+        }
+        
+        function clearKeys() {
+             const input = document.getElementById(focusedInput);
+             input.value = '';
+        }
+
         function selectType(type, label) {
             const step1 = document.getElementById('step-1');
             const step2 = document.getElementById('step-2');
@@ -212,7 +274,7 @@
             hidden.value = type;
 
             step1.style.opacity = '0';
-            step1.style.transform = 'translateY(-10px)';
+            step1.style.transform = 'translateY(-20px)';
             
             setTimeout(() => {
                 step1.classList.add('hidden');
@@ -220,6 +282,8 @@
                 setTimeout(() => {
                     step2.style.opacity = '1';
                     step2.style.transform = 'translateY(0)';
+                    // Auto-foco al documento al entrar
+                    document.getElementById('input_doc').focus();
                 }, 50);
             }, 400);
         }
@@ -229,7 +293,7 @@
             const step2 = document.getElementById('step-2');
 
             step2.style.opacity = '0';
-            step2.style.transform = 'translateY(10px)';
+            step2.style.transform = 'translateY(20px)';
             
             setTimeout(() => {
                 step2.classList.add('hidden');
@@ -248,8 +312,15 @@
             const btnText = document.getElementById('btn-text');
             const loader = document.getElementById('btn-loader');
             
+            // Validación mínima táctil
+            const doc = document.getElementById('input_doc').value;
+            if (doc.length < 5) {
+                alert("Por favor ingrese un número de documento válido.");
+                return;
+            }
+
             btn.disabled = true;
-            btnText.innerText = "Procesando...";
+            btnText.innerText = "PROCESANDO...";
             loader.classList.remove('hidden');
 
             const formData = new FormData(this);
@@ -283,6 +354,11 @@
                         setTimeout(() => {
                             step3.style.opacity = '1';
                             step3.style.transform = 'translateY(0)';
+                            
+                            // Recargar automáticamente después de 15 segundos para limpiar el kiosco
+                            setTimeout(() => {
+                                if (!step3.classList.contains('hidden')) location.reload();
+                            }, 15000);
                         }, 50);
                     }, 400);
                 }
@@ -291,7 +367,7 @@
                 alert('Ocurrió un error al procesar el turno.');
             } finally {
                 btn.disabled = false;
-                btnText.innerText = "Generar mi Turno";
+                btnText.innerText = "GENERAR MI TURNO";
                 loader.classList.add('hidden');
             }
         });
