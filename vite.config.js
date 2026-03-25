@@ -11,6 +11,10 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: true, // Permite que Vite responda en el dominio virtual de Herd
+        hmr: {
+            host: 'localhost', // Mantiene la conexión HMR estable
+        },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
