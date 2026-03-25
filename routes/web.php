@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TurnoController;
 use App\Http\Controllers\AsesorController;
 use App\Http\Controllers\CoordinadorController;
