@@ -187,6 +187,43 @@ class CoordinadorController extends Controller
         return view('coordinador.reporte', compact('reporte'));
     }
 
+    public function storeAsesor(Request $request)
+    {
+        $request->validate([
+            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_tipodoc'   => 'required|string',
+            'pers_nombres'   => 'required|string',
+            'pers_apellidos' => 'required|string',
+            'ase_correo'     => 'required|email|unique:asesor,ase_correo',
+            'ase_password'   => 'required|string|min:6',
+            'ase_tipo_asesor'=> 'required|in:G,V,P',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            // 1. Crear Persona
+            Persona::create([
+                'pers_doc'       => $request->pers_doc,
+                'pers_tipodoc'   => $request->pers_tipodoc,
+                'pers_nombres'   => $request->pers_nombres,
+                'pers_apellidos' => $request->pers_apellidos,
+                'pers_fecha_nac' => now(), // Placeholder o agregar al form
+            ]);
+
+            // 2. Crear Asesor
+            Asesor::create([
+                'ase_nrocontrato'   => 'APE-' . now()->timestamp,
+                'ase_tipo_asesor'   => $request->ase_tipo_asesor,
+                'PERSONA_pers_doc' => $request->pers_doc,
+                'ase_correo'        => $request->ase_correo,
+                'ase_password'      => Hash::make($request->ase_password),
+                'ase_estado'        => 'disponible',
+                'ase_vigencia'      => 1,
+            ]);
+
+            return response()->json(['success' => true]);
+        });
+    }
+
     // ─────────────────────────────────────────────────────────────
     //  HELPERS
     // ─────────────────────────────────────────────────────────────

@@ -44,6 +44,7 @@
                 </div>
             </div>
             <nav class="flex items-center space-x-6">
+                <button onclick="openModal()" class="bg-[#ffb500] hover:bg-[#e6a300] text-[#0a0455] text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-md border-b-4 border-[#b38600]">Registrar Asesor</button>
                 <a href="{{ route('coordinador.reporte') }}" class="text-xs font-bold uppercase tracking-widest hover:text-[#ffb500] transition-colors">Reportes Semanales</a>
                 <form action="{{ route('coordinador.logout') }}" method="POST">
                     @csrf
@@ -153,8 +154,91 @@
         </div>
     </main>
 
+    <!-- Modal de Registro -->
+    <div id="modalAsesor" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
+            <div class="bg-[#0a0455] p-6 text-white flex justify-between items-center">
+                <h3 class="font-black uppercase tracking-widest text-sm">Nuevo Asesor APE</h3>
+                <button onclick="closeModal()" class="text-white/50 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="formAsesor" class="p-8 space-y-4">
+                @csrf
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo Doc</label>
+                        <select name="pers_tipodoc" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
+                            <option value="CC">CC</option>
+                            <option value="CE">CE</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Documento</label>
+                        <input type="text" name="pers_doc" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombres</label>
+                    <input type="text" name="pers_nombres" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs font-bold focus:border-[#10069f] outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Apellidos</label>
+                    <input type="text" name="pers_apellidos" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs font-bold focus:border-[#10069f] outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Correo Institucional</label>
+                    <input type="email" name="ase_correo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs font-bold focus:border-[#10069f] outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Contraseña</label>
+                        <input type="password" name="ase_password" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fila</label>
+                        <select name="ase_tipo_asesor" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
+                            <option value="G">General</option>
+                            <option value="V">Víctimas</option>
+                            <option value="P">Prioritario</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-2xl shadow-xl transition-all uppercase text-[10px] tracking-widest mt-4">Guardar Asesor</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        function openModal() {
+            document.getElementById('modalAsesor').classList.remove('hidden');
+            document.getElementById('modalAsesor').classList.add('flex');
+        }
+        function closeModal() {
+            document.getElementById('modalAsesor').classList.add('hidden');
+            document.getElementById('modalAsesor').classList.remove('flex');
+        }
+
+        document.getElementById('formAsesor').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const res = await fetch('{{ route('coordinador.asesor.store') }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Asesor registrado correctamente');
+                    location.reload();
+                } else {
+                    alert('Error: ' + JSON.stringify(data.errors || 'Verifique los datos'));
+                }
+            } catch (e) { alert('Error de conexión'); }
+        });
 
         async function aceptarTurno() {
             try {
