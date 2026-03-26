@@ -23,6 +23,7 @@ class Asesor extends Model
         'ase_estado',
         'ase_turno_actual_id',
         'ase_turno_actual_tipo',
+        'ase_mesa',
     ];
 
     public function persona()

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'coordinador.inactividad' => \App\Http\Middleware\InactividadCoordinador::class,
+            'asesor.inactividad'     => \App\Http\Middleware\InactividadAsesor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

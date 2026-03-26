@@ -153,23 +153,31 @@
                 <form id="turno-form" class="space-y-8">
                     <input type="hidden" name="tipo_atencion" id="tipo_atencion_hidden">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="col-span-full">
+                    <div class="space-y-6">
+                        <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Número de Documento</label>
                             <input type="text" name="numero_documento" id="input_doc" required 
                                 onclick="setActiveInput('input_doc')"
                                 onfocus="setActiveInput('input_doc')"
-                                placeholder="Toque los números abajo" 
+                                placeholder="Toque los números" 
                                 class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-2xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
                         </div>
 
-                        <div class="col-span-full">
+                        <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Teléfono (opcional)</label>
                             <input type="tel" name="telefono" id="input_tel" 
                                 onclick="setActiveInput('input_tel')"
                                 onfocus="setActiveInput('input_tel')"
-                                placeholder="Seleccione campo para escribir" 
+                                placeholder="Opcional para recibir notificaciones" 
                                 class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
+                        </div>
+
+                        <div class="w-full">
+                            <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Tipo Documento</label>
+                            <select name="pers_tipodoc" id="pers_tipodoc" required class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
+                                <option value="CC">Cédula CC</option>
+                                <option value="PPT">Permiso por Protección Temporal (PPT)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -189,14 +197,6 @@
                         </button>
                         <button type="button" onclick="pressKey('0')" class="key-btn">0</button>
                         <button type="button" onclick="clearKeys()" class="key-btn text-gray-400 text-sm">Borrar</button>
-                    </div>
-
-                    <div class="pt-4">
-                        <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Documento</label>
-                        <select name="pers_tipodoc" required class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
-                            <option value="CC">Cédula CC</option>
-                            <option value="PPT">Permiso por Protección Temporal (PPT)</option>
-                        </select>
                     </div>
 
                     <button type="submit" id="submit-btn" class="w-full bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-6 rounded-[1.5rem] shadow-xl shadow-blue-200 transition-all transform active:scale-95 uppercase tracking-[0.2em] text-sm flex justify-center items-center mt-6 border-b-4 border-[#0a0455]">
@@ -219,13 +219,13 @@
                 <h2 class="text-2xl font-extrabold text-ape-dark mb-1">¡Turno Asignado!</h2>
                 <p class="text-ape-gray font-semibold mb-8 uppercase text-[10px] tracking-widest">Su código de atención es:</p>
 
-                <div class="bg-ape-dark rounded-2xl py-10 mb-8 shadow-inner group transition-all">
-                    <span id="turno-codigo" class="text-7xl font-black text-ape-yellow tracking-tighter">G-001</span>
+                <div class="bg-ape-dark rounded-2xl py-6 mb-8 shadow-inner group transition-all w-full max-w-[280px] mx-auto">
+                    <span id="turno-codigo" class="text-6xl font-black text-ape-yellow tracking-tighter">G-001</span>
                 </div>
 
-                <div class="bg-ape-blue/5 rounded-xl p-4 mb-10 inline-block border border-ape-blue/10">
-                    <p class="text-ape-gray text-xs font-bold mb-1">Diríjase a la sala y espere el llamado en pantalla</p>
-                    <p class="text-ape-blue text-[10px] font-black uppercase tracking-tighter">AGENCIA PÚBLICA DE EMPLEO - APE</p>
+                <div class="bg-ape-blue/5 rounded-2xl p-5 mb-10 block border border-ape-blue/10 w-full max-w-[280px] mx-auto">
+                    <p class="text-ape-gray text-[10px] font-extra-bold mb-1.5 leading-tight">Diríjase a la sala y espere el llamado en pantalla</p>
+                    <p class="text-ape-blue text-[9px] font-black uppercase tracking-tight">AGENCIA PÚBLICA DE EMPLEO - APE</p>
                 </div>
 
                 <button onclick="location.reload()" class="w-full py-4 text-ape-blue font-extrabold hover:bg-ape-blue/5 rounded-xl transition-all uppercase tracking-widest text-xs border-2 border-transparent hover:border-ape-blue/10">
@@ -240,6 +240,9 @@
         <p class="text-ape-gray text-[10px] font-bold uppercase tracking-[0.3em]">Agencia Pública de Empleo - APE</p>
     </div>
 
+
+    {{-- Sonido de éxito --}}
+    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
     <script>
@@ -269,11 +272,41 @@
              input.value = '';
         }
 
+        function setActiveInput(id) {
+            focusedInput = id;
+        }
+
         function selectType(type, label) {
             const step1 = document.getElementById('step-1');
             const step2 = document.getElementById('step-2');
             const badge = document.getElementById('type-badge');
             const hidden = document.getElementById('tipo_atencion_hidden');
+            const selectDoc = document.getElementById('pers_tipodoc');
+
+            // Limpiar opciones
+            selectDoc.innerHTML = '';
+
+            // Opción Cédula siempre disponible
+            const optCC = document.createElement('option');
+            optCC.value = 'CC';
+            optCC.textContent = 'Cédula CC';
+            selectDoc.appendChild(optCC);
+
+            if (type === 'empresario') {
+                // Agregar NIT solo si es empresario
+                const optNit = document.createElement('option');
+                optNit.value = 'NIT';
+                optNit.textContent = 'NIT de Empresa';
+                selectDoc.appendChild(optNit);
+                selectDoc.value = 'NIT'; // Por defecto para empresario
+            } else {
+                // Agregar PPT solo si NO es empresario
+                const optPpt = document.createElement('option');
+                optPpt.value = 'PPT';
+                optPpt.textContent = 'Permiso por Protección Temporal (PPT)';
+                selectDoc.appendChild(optPpt);
+                selectDoc.value = 'CC'; // Por defecto para otros
+            }
 
             badge.innerText = label;
             hidden.value = type;
@@ -292,6 +325,7 @@
                     step2.style.transform = 'translateY(0)';
                     // Auto-foco al documento al entrar
                     document.getElementById('input_doc').focus();
+                    focusedInput = 'input_doc';
                 }, 50);
             }, 400);
         }
@@ -355,6 +389,9 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    // Reproducir sonido para todos los tipos
+                    document.getElementById('success-sound').play();
+
                     const step2 = document.getElementById('step-2');
                     const step3 = document.getElementById('step-3');
                     const codigoDisplay = document.getElementById('turno-codigo');

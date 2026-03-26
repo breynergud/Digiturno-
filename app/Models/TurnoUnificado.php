@@ -18,7 +18,13 @@ class TurnoUnificado extends Model
         'tur_numero',
         'tur_tipo',
         'USUARIO_user_id',
+        'ASESOR_ase_id',
     ];
+
+    public function asesor()
+    {
+        return $this->belongsTo(Asesor::class, 'ASESOR_ase_id', 'ase_id');
+    }
 
     public function usuario()
     {

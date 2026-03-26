@@ -41,6 +41,7 @@ class CoordinadorController extends Controller
 
         session([
             'coor_id' => $coor->coor_id,
+            'coor_ultima_actividad' => time(),
         ]);
 
         return redirect()->route('coordinador.dashboard');
@@ -48,8 +49,13 @@ class CoordinadorController extends Controller
 
     public function logout()
     {
-        session()->forget(['coor_id']);
+        session()->forget(['coor_id', 'coor_ultima_actividad']);
         return redirect()->route('coordinador.login');
+    }
+
+    public function sesionFinalizada()
+    {
+        return view('coordinador.finalizada');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -65,6 +71,10 @@ class CoordinadorController extends Controller
         $coordinador = Coordinador::with('persona')->findOrFail(session('coor_id'));
         $asesores    = Asesor::with('persona')->get();
         $colaEmpresario = $this->getColaEmpresario();
+
+        // Establecer un window_id único para esta pestaña (aislamiento)
+        $windowId = bin2hex(random_bytes(8));
+        session(['coor_window_id' => $windowId]);
         
         return view('coordinador.dashboard', compact('coordinador', 'asesores', 'colaEmpresario'));
     }
@@ -103,7 +113,7 @@ class CoordinadorController extends Controller
     {
         $request->validate([
             'ase_id'   => 'required|exists:asesor,ase_id',
-            'nuevo_tipo' => 'required|in:V,P,G',
+            'nuevo_tipo' => 'required|in:V,G',
         ]);
 
         $asesor = Asesor::findOrFail($request->ase_id);
@@ -196,7 +206,8 @@ class CoordinadorController extends Controller
             'pers_apellidos' => 'required|string',
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6',
-            'ase_tipo_asesor'=> 'required|in:G,V,P',
+            'ase_tipo_asesor'=> 'required|in:G,V',
+            'ase_mesa'       => 'required|integer|min:1|max:20',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -213,6 +224,7 @@ class CoordinadorController extends Controller
             Asesor::create([
                 'ase_nrocontrato'   => 'APE-' . now()->timestamp,
                 'ase_tipo_asesor'   => $request->ase_tipo_asesor,
+                'ase_mesa'          => $request->ase_mesa,
                 'PERSONA_pers_doc' => $request->pers_doc,
                 'ase_correo'        => $request->ase_correo,
                 'ase_password'      => Hash::make($request->ase_password),

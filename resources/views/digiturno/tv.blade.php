@@ -31,9 +31,35 @@
             color: white;
             border-top: 4px solid #ffb500;
         }
+        /* Overlay de Audio */
+        #audio-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            items-center: center;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-6 lg:p-10 text-white">
+
+    <!-- Overlay para activar audio -->
+    <div id="audio-overlay">
+        <div class="bg-white p-12 rounded-[3rem] shadow-2xl max-w-2xl mx-auto">
+            <div class="text-[#10069f] mb-8">
+                <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+            </div>
+            <h2 class="text-4xl font-black text-black mb-6 uppercase tracking-tight">Activar Sistema de Audio</h2>
+            <p class="text-gray-600 text-xl font-medium mb-10">Para escuchar los llamados de turnos, por favor haz clic en el botón.</p>
+            <button onclick="enableAudio()" class="bg-[#10069f] hover:bg-[#ffb500] text-white hover:text-black px-12 py-6 rounded-2xl text-2xl font-black uppercase tracking-widest transition-all transform hover:scale-105 shadow-xl">
+                Activar Sonido
+            </button>
+        </div>
+    </div>
 
     <!-- Header TV Institucional -->
     <div class="flex justify-between items-center mb-8 border-b-2 border-white/10 pb-8">
@@ -102,46 +128,63 @@
     </div>
 
     <script>
-        let lastCodes = {};
+        let announcedAttentions = new Set();
         let firstLoad = true;
+        let audioEnabled = false;
+
+        const labels = {
+            'victimas': 'Víctimas',
+            'especial': 'Especial',
+            'general': 'General',
+            'empresario': 'Empresas',
+            'prioritario': 'Prioritario'
+        };
+
+        function enableAudio() {
+            audioEnabled = true;
+            document.getElementById('audio-overlay').style.display = 'none';
+            // Tocar un silencio o el primer sonido para desbloquear
+            const audio = document.getElementById('call-sound');
+            audio.muted = true;
+            audio.play().then(() => {
+                audio.muted = false;
+            }).catch(e => console.log("Audio play blocked", e));
+            
+            // Probar síntesis (algunos navegadores requieren esta interacción)
+            if (window.speechSynthesis) {
+                const init = new SpeechSynthesisUtterance("");
+                window.speechSynthesis.speak(init);
+            }
+        }
+
+        function speakTurn(codigo, tipo, mesa) {
+            if (!window.speechSynthesis || !audioEnabled) return;
+            
+            const codigoLimpio = codigo.replace('-', ' ');
+            const mensaje = `Turno, ${codigoLimpio}. Atención, ${tipo}. Por favor, diríjase a la mesa, ${mesa}`;
+            
+            const utterance = new SpeechSynthesisUtterance(mensaje);
+            utterance.lang = 'es-ES';
+            utterance.rate = 0.85;
+            utterance.pitch = 1.0;
+            
+            window.speechSynthesis.speak(utterance);
+        }
 
         async function updateTurns() {
             try {
-                // Usamos el endpoint de pendientes: solo turnos NO atendidos
                 const response = await fetch('{{ route("turnos.api.pendientes") }}');
-                const turns = await response.json();
+                const data = await response.json();
                 
                 const container = document.getElementById('category-container');
                 container.innerHTML = '';
                 
-                let newestTurn = null;
-
-                turns.forEach(turn => {
+                // 1. Mostrar la lista de espera (Waiting)
+                // Estos son los turnos asignados pero aún no aceptados
+                data.waiting.forEach(turn => {
                     if (turn) {
-                        // Detectar el más reciente globalmente por ID
-                        if (!newestTurn || turn.id > newestTurn.id) {
-                            newestTurn = turn;
-                        }
-
-                        // Sonido si el código cambió (solo para el más nuevo)
-                        if (!firstLoad && lastCodes[turn.tipo_atencion] !== turn.codigo_turno) {
-                             const turnDate = new Date(turn.created_at);
-                             if (new Date() - turnDate < 20000) {
-                                document.getElementById('call-sound').play();
-                             }
-                        }
-                        lastCodes[turn.tipo_atencion] = turn.codigo_turno;
-
                         const card = document.createElement('div');
-                        card.className = "tv-card rounded-2xl p-6 flex justify-between items-center text-black shadow-lg";
-                        card.style.borderLeftColor = '#10069f';
-                        
-                        const labels = {
-                            'victimas': 'Víctimas',
-                            'especial': 'Especial',
-                            'general': 'General',
-                            'empresario': 'Empresas'
-                        };
+                        card.className = "tv-card rounded-2xl p-6 flex justify-between items-center text-black bg-white shadow-lg border-l-[12px] border-[#10069f]";
 
                         card.innerHTML = `
                             <div>
@@ -154,34 +197,46 @@
                     }
                 });
 
-                // Si no hay turnos pendientes, mostrar mensaje
-                if (turns.length === 0) {
-                    container.innerHTML = `
-                        <div class="tv-card rounded-2xl p-6 flex justify-between items-center text-black opacity-50">
-                            <p class="font-bold text-gray-400 uppercase tracking-widest italic">Sin turnos en espera...</p>
-                        </div>`;
-                }
+                // 2. Manejar los llamados activos (Calling)
+                // Estos turnos acaban de ser aceptados por un asesor
+                let newestCall = null;
+                data.calling.forEach(turn => {
+                    if (turn) {
+                        if (!newestCall || turn.id > newestCall.id) newestCall = turn;
 
-                // Actualizar panel principal con el turno más reciente pendiente
-                if (newestTurn) {
+                        // Voz: SOLO si no ha sido anunciado
+                        if (!announcedAttentions.has(turn.atencion_id)) {
+                            if (!firstLoad && audioEnabled) {
+                                const labelText = labels[turn.tipo_atencion] || turn.tipo_atencion;
+                                speakTurn(turn.codigo_turno, labelText, turn.mesa);
+                            }
+                            announcedAttentions.add(turn.atencion_id);
+                        }
+                    }
+                });
+
+                // Mostrar el llamado actual en el panel principal
+                // Desaparecerá solo después de los 20 segundos que define el backend
+                if (newestCall) {
                     const mainCode = document.getElementById('main-turn-code');
                     const mainMesa = document.getElementById('main-turn-mesa');
                     
-                    if (mainCode.innerText !== newestTurn.codigo_turno) {
-                        mainCode.style.opacity = '0';
-                        setTimeout(() => {
-                            mainCode.innerText = newestTurn.codigo_turno;
-                            mainMesa.innerText = 'MESA ' + newestTurn.mesa;
-                            mainCode.style.transition = 'opacity 0.5s';
-                            mainCode.style.opacity = '1';
-                        }, 300);
+                    if (mainCode.innerText !== newestCall.codigo_turno) {
+                        mainCode.innerText = newestCall.codigo_turno;
+                        mainMesa.innerText = 'MESA ' + newestCall.mesa;
                     }
                 } else {
-                    // No hay turnos pendientes: limpiar panel
                     const mainCode = document.getElementById('main-turn-code');
                     const mainMesa = document.getElementById('main-turn-mesa');
                     mainCode.innerText = '---';
                     mainMesa.innerText = 'MESA --';
+                }
+
+                if (data.waiting.length === 0 && !newestCall) {
+                    container.innerHTML = `
+                        <div class="tv-card rounded-2xl p-6 flex justify-between items-center text-black opacity-50">
+                            <p class="font-bold text-gray-400 uppercase tracking-widest italic">Sin turnos pendientes...</p>
+                        </div>`;
                 }
 
                 firstLoad = false;

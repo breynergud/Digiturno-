@@ -21,13 +21,14 @@ Este sistema ha sido diseñado para optimizar el flujo de atención al ciudadano
 
 ### 3. Panel del Asesor
 - **Gestión de Turnos:** Llamar al siguiente turno, finalizar atención o poner en espera.
-- **Trazabilidad:** Ver el historial de atenciones del día.
-- **Seguridad:** Cierre de sesión automático al cerrar el navegador para proteger la sesión.
+- **Aislamiento de Actividad:** Cada pestaña del dashboard se aísla mediante un ID único (`window_id`), evitando que otras pestañas del mismo navegador reseteen el contador de inactividad.
+- **Seguridad Dinámica:** Detección de redirección por AJAX; si la sesión expira en el servidor, la interfaz se bloquea y redirige al usuario automáticamente.
+- **Colas Personalizadas:** Visualización separada y permanente de turnos **Prioritarios** y **Generales** según la pre-asignación de la mesa.
 
 ### 4. Panel del Coordinador (Administración)
-- **Monitor de Asesores:** Visualización en tiempo real del estado de cada asesor (Disponible/Ocupado/Espera).
+- **Asignación de Mesas:** Gestión de mesas (1-20) para cada asesor desde su registro.
+- **Monitor de Estados:** Visualización en tiempo real del estado de cada asesor y su carga de trabajo.
 - **Asignación de Colas:** Posibilidad de cambiar el tipo de atención que recibe cada asesor dinámicamente.
-- **Atención Directa:** El coordinador puede atender la cola de "Empresarios" directamente desde su panel.
 - **Reportes:** Generación de reportes semanales de rendimiento y flujo de usuarios.
 
 ## 🎨 Diseño y UX

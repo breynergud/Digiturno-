@@ -137,7 +137,6 @@
                                 <select onchange="cambiarTipo(this, {{ $a->ase_id }})" class="bg-white border border-gray-200 text-[10px] font-bold rounded-lg px-2 py-1 outline-none focus:border-[#10069f]">
                                     <option value="G" {{ $a->ase_tipo_asesor == 'G' ? 'selected' : '' }}>General</option>
                                     <option value="V" {{ $a->ase_tipo_asesor == 'V' ? 'selected' : '' }}>Víctimas</option>
-                                    <option value="P" {{ $a->ase_tipo_asesor == 'P' ? 'selected' : '' }}>Prioritario</option>
                                 </select>
                             </div>
                             @if($a->ase_estado === 'ocupado')
@@ -154,6 +153,27 @@
         </div>
     </main>
 
+    <!-- ─── MODAL CIERRE DE SESIÓN (Timeout) ────────────────────── -->
+    <div id="modal-timeout" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] overflow-hidden w-full max-w-md shadow-2xl transform transition-all border border-white/10">
+            <div class="h-2 bg-[#10069f] w-full"></div>
+            <div class="p-8">
+                <h3 class="text-3xl font-black text-[#0a0455] mb-4 uppercase tracking-tighter">Cierre de Sesión</h3>
+                <p class="text-gray-600 text-lg mb-8 leading-relaxed font-medium">
+                    Su Sesión se va a cerrar en un minuto. Cancelar para seguir trabajando o Aceptar para cerrar ahora
+                </p>
+                <div class="flex gap-4">
+                    <button id="btn-timeout-aceptar" onclick="logoutAhora()" class="flex-1 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-[#0a0455]">
+                        ACEPTAR (<span id="timeout-countdown">60</span>)
+                    </button>
+                    <button onclick="continuarSesion()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-black py-4 rounded-xl text-lg uppercase transition-colors border border-gray-200">
+                        CANCELAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Registro -->
     <div id="modalAsesor" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl transform transition-all">
@@ -165,7 +185,7 @@
             </div>
             <form id="formAsesor" class="p-8 space-y-4">
                 @csrf
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                     <div class="space-y-1">
                         <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo Doc</label>
                         <select name="pers_tipodoc" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
@@ -176,6 +196,10 @@
                     <div class="space-y-1">
                         <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Documento</label>
                         <input type="text" name="pers_doc" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Mesa</label>
+                        <input type="number" name="ase_mesa" required min="1" max="20" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none" placeholder="1-20">
                     </div>
                 </div>
                 <div class="space-y-1">
@@ -200,7 +224,6 @@
                         <select name="ase_tipo_asesor" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
                             <option value="G">General</option>
                             <option value="V">Víctimas</option>
-                            <option value="P">Prioritario</option>
                         </select>
                     </div>
                 </div>
@@ -227,7 +250,10 @@
             try {
                 const res = await fetch('{{ route('coordinador.asesor.store') }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
                 const data = await res.json();
@@ -244,7 +270,10 @@
             try {
                 const res = await fetch('{{ route('coordinador.aceptar') }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -261,7 +290,11 @@
             try {
                 const res = await fetch('{{ route('coordinador.reasignar') }}', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: JSON.stringify({ ase_id, nuevo_tipo })
                 });
                 const data = await res.json();
@@ -273,20 +306,119 @@
             } catch (e) { console.error(e); }
         }
 
+        // ── Identificador de Pestaña (Aislamiento) ────────────────
+        if (!sessionStorage.getItem('coor_tab_id')) {
+            sessionStorage.setItem('coor_tab_id', 'ctab_' + Math.random().toString(36).substr(2, 9));
+        }
+        const TAB_ID = sessionStorage.getItem('coor_tab_id');
+
         // Polling para actualizar estados
         setInterval(async () => {
             try {
-                const res = await fetch('{{ route('coordinador.api.estado') }}');
+                const res = await fetch('{{ route('coordinador.api.estado') }}?window_id=' + TAB_ID, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                // Si el servidor nos redirigió (302), significa que la sesión expiró
+                if (res.redirected) {
+                    location.reload();
+                    return;
+                }
+
                 const data = await res.json();
-                // Aquí podrías actualizar el DOM dinámicamente sin recargar
-                // Por ahora solo actualizamos el contador de la cola para feedback visual
                 document.getElementById('empresario-count').innerText = data.colaEmpresario.length;
             } catch (e) { console.error(e); }
         }, 5000);
 
+        // ── Inactividad (15 min) ───────────────────────────────────
+        let lastActivityTimestamp = Date.now(); // Usar timestamp real para evitar throttling de pestañas
+        let countdownTime = 60;
+        let countdownInterval = null;
+        let heartbeatInterval = null;
+        const IDLE_LIMIT = 14 * 60 * 1000; // 14 minutos en milisegundos
+
+        function resetIdleTimer() {
+            if (document.getElementById('modal-timeout').classList.contains('hidden')) {
+                const now = Date.now();
+                // Si ha pasado más de 30 segundos desde el último latido, avisar al servidor
+                if (now - lastActivityTimestamp > 30000) {
+                    enviarHeartbeat();
+                }
+                lastActivityTimestamp = now;
+            }
+        }
+
+        async function enviarHeartbeat() {
+            try {
+                // heartbeat=1 hace que el middleware actualice la actividad.
+                // Enviamos el TAB_ID para que solo esta pestaña sea la "dueña" de la sesión.
+                await fetch('{{ route("coordinador.api.estado") }}?heartbeat=1&window_id=' + TAB_ID, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+            } catch (e) { console.error("Error heartbeat", e); }
+        }
+
+        // Detectar actividad del usuario
+        ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, true);
+        });
+
+        // Revisar inactividad cada 2 segundos (más eficiente)
+        setInterval(() => {
+            const now = Date.now();
+            const inactiveTime = now - lastActivityTimestamp;
+
+            if (inactiveTime >= IDLE_LIMIT && document.getElementById('modal-timeout').classList.contains('hidden')) {
+                mostrarAvisoTimeout();
+            }
+        }, 2000);
+
+        function mostrarAvisoTimeout() {
+            const modal = document.getElementById('modal-timeout');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            countdownTime = 60;
+            document.getElementById('timeout-countdown').innerText = countdownTime;
+            
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownTime--;
+                document.getElementById('timeout-countdown').innerText = countdownTime;
+                if (countdownTime <= 0) {
+                    logoutAhora();
+                }
+            }, 1000);
+        }
+
+        async function continuarSesion() {
+            try {
+                // Forzar actualización de sesión en el servidor
+                await enviarHeartbeat();
+                clearInterval(countdownInterval);
+                document.getElementById('modal-timeout').classList.add('hidden');
+                document.getElementById('modal-timeout').classList.remove('flex');
+                lastActivityTimestamp = Date.now();
+            } catch (e) {
+                console.error("Error al refrescar sesión", e);
+            }
+        }
+
+        function logoutAhora() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("coordinador.logout") }}';
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = CSRF_TOKEN;
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
         // Cerrar sesión al cerrar la pestaña/navegador
         window.addEventListener('unload', function() {
-            // Si no es un refresco de página (navigation type 1)
             const isRefresh = window.performance && window.performance.navigation.type === 1;
             if (!isRefresh) {
                 const blob = new Blob([JSON.stringify({ _token: CSRF_TOKEN })], { type: 'application/json' });

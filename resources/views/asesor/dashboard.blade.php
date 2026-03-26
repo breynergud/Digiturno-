@@ -172,12 +172,11 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     Aceptar Turno
                 </button>
-
                 {{-- Botón Espera / Reanudar --}}
                 <button
                     id="btn-espera"
                     onclick="toggleEspera()"
-                    class="{{ $asesor->ase_estado === 'en_espera' ? 'btn-primary' : 'btn-warning' }} w-full text-white font-extrabold py-3.5 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 {{ $asesor->ase_estado === 'ocupado' ? 'opacity-40 cursor-not-allowed' : '' }}"
+                    class="{{ $asesor->ase_estado === 'en_espera' ? 'btn-primary' : 'btn-warning' }} w-full text-white font-extrabold py-3.5 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 mt-3 {{ $asesor->ase_estado === 'ocupado' ? 'opacity-40 cursor-not-allowed' : '' }}"
                     {{ $asesor->ase_estado === 'ocupado' ? 'disabled' : '' }}
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,95 +191,48 @@
                         {{ $asesor->ase_estado === 'en_espera' ? 'Reanudar Actividad' : 'Poner en Espera' }}
                     </span>
                 </button>
-            </div>
 
-            {{-- Contador - Atendidos hoy --}}
-            <div class="glass rounded-2xl p-5 flex items-center justify-between overflow-hidden">
-                <div class="relative z-10">
-                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Atendidos Hoy</p>
-                    <p id="contador-atendidos" class="text-4xl font-black text-[#ffb500] mt-1">{{ count($historial) }}</p>
-                </div>
-                <div class="w-14 h-14 bg-[#10069f]/10 border border-[#10069f]/30 rounded-2xl flex items-center justify-center relative z-10">
-                    <svg class="w-7 h-7 text-[#10069f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                </div>
             </div>
         </div>
 
-        {{-- ── Columna Derecha: Cola + Historial ──────────────────── --}}
+        {{-- ── Columna Derecha: Colas de Turnos ────────────────────── --}}
         <div class="lg:col-span-2 flex flex-col gap-5">
 
-            {{-- Cola de Turnos Pendientes --}}
-            <div class="glass rounded-2xl p-6">
+            {{-- Sección: Turnos PRIORITARIOS --}}
+            <div id="card-cola-prioritaria" class="glass rounded-2xl p-6 border-b-4 border-[#ffb500]">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <p class="text-[#ffb500] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-[#ffb500] rounded-full animate-pulse"></span>
+                            Atención Especial / Especiales
+                        </p>
+                        <h3 class="text-white font-extrabold text-lg">Turnos Prioritarios</h3>
+                    </div>
+                </div>
+                <div id="lista-cola-prioritaria" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[100px]">
+                    {{-- Se puebla por JS --}}
+                </div>
+            </div>
+
+            {{-- Sección: Turnos GENERALES --}}
+            <div class="glass rounded-2xl p-6 flex-1 border-b-4 border-gray-700">
                 <div class="flex items-center justify-between mb-5">
                     <div>
                         <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Cola de Espera</p>
-                        <h3 class="text-white font-extrabold text-lg">Turnos Pendientes</h3>
+                        <h3 class="text-white font-extrabold text-lg">Turnos Generales</h3>
                     </div>
-                    <div class="flex items-center gap-2 text-wrap">
-                        <div class="w-2 h-2 bg-[#ffb500] rounded-full animate-pulse"></div>
-                        <span class="text-[#ffb500] text-[10px] font-black uppercase tracking-wider">En vivo</span>
-                        <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full ml-1">
-                            <span id="cola-count">{{ count($cola) }}</span> en cola
+                    <div class="flex items-center gap-2">
+                        <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                            <span id="cola-count">0</span> pendientes
                         </span>
                     </div>
                 </div>
 
-                {{-- Lista de turnos en cola --}}
-                <div id="lista-cola" class="space-y-3 max-h-80 overflow-y-auto pr-1">
-                    @forelse($cola as $turno)
-                        <div class="queue-item glass rounded-xl px-5 py-4 border border-white/5 flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Turno en espera</p>
-                                <p class="text-white font-black text-2xl">{{ $turno['codigo'] }}</p>
-                            </div>
-                            <p class="text-gray-500 text-xs font-semibold">
-                                {{ \Carbon\Carbon::parse($turno['hora'])->format('H:i') }}
-                            </p>
-                        </div>
-                    @empty
-                        <div class="text-center py-12">
-                            <div class="text-gray-600 mb-3">
-                                <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            </div>
-                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos en cola</p>
-                        </div>
-                    @endforelse
+                <div id="lista-cola" class="space-y-3 max-h-[500px] overflow-y-auto pr-1 min-h-[100px]">
+                    {{-- Se puebla por JS --}}
                 </div>
             </div>
-
-            {{-- Historial del día --}}
-            <div class="glass rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-5">
-                    <div>
-                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Historial</p>
-                        <h3 class="text-white font-extrabold text-lg">Atenciones de Hoy</h3>
-                    </div>
-                </div>
-
-                <div id="lista-historial" class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    @forelse($historial as $item)
-                        <div class="flex items-center justify-between glass rounded-xl px-5 py-3 border border-white/5">
-                            <div class="flex items-center gap-3">
-                                <span class="text-[#ffb500] font-black text-lg">{{ $item['codigo'] }}</span>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-gray-400 text-xs font-semibold">
-                                    {{ \Carbon\Carbon::parse($item['hora_inicio'])->format('H:i') }}
-                                    @if($item['hora_fin'])
-                                        → {{ \Carbon\Carbon::parse($item['hora_fin'])->format('H:i') }}
-                                    @else
-                                        <span class="text-blue-400">(activo)</span>
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-8">
-                            <p class="text-gray-600 font-semibold uppercase tracking-wider text-sm">Sin atenciones registradas hoy</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
+        </div>
         </div>
     </main>
 
@@ -360,6 +312,27 @@
         </div>
     </div>
 
+    <!-- ─── MODAL CIERRE DE SESIÓN (Timeout) ────────────────────── -->
+    <div id="modal-timeout" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] overflow-hidden w-full max-w-md shadow-2xl transform transition-all border border-white/10">
+            <div class="h-2 bg-[#10069f] w-full"></div>
+            <div class="p-8">
+                <h3 class="text-3xl font-black text-[#0a0455] mb-4 uppercase tracking-tighter">Cierre de Sesión</h3>
+                <p class="text-gray-600 text-lg mb-8 leading-relaxed font-medium">
+                    Su Sesión se va a cerrar en un minuto. Cancelar para seguir trabajando o Aceptar para cerrar ahora
+                </p>
+                <div class="flex gap-4">
+                    <button id="btn-timeout-aceptar" onclick="logoutAhora()" class="flex-1 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-[#0a0455]">
+                        ACEPTAR (<span id="timeout-countdown">60</span>)
+                    </button>
+                    <button onclick="continuarSesion()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 rounded-xl text-lg uppercase transition-colors border border-gray-200">
+                        CANCELAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ─── TOAST NOTIFICACIÓN ──────────────────────────────────── --}}
     <div id="toast" class="fixed bottom-6 right-6 max-w-sm z-50 hidden">
         <div id="toast-inner" class="rounded-2xl px-5 py-4 shadow-2xl font-bold text-sm text-white">
@@ -433,12 +406,52 @@
             }
         }
 
-        // ── Aceptar Turno ──────────────────────────────────────────
+        // ── Aceptar Turno Específico (Prioritarios) ────────────────
+        async function aceptarTurnoEspecifico(turId) {
+            try {
+                const res = await fetch('{{ route("asesor.aceptar") }}', {
+                    method: 'POST',
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF, 
+                        'Accept': 'application/json', 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ tur_id: turId })
+                });
+                const data = await res.json();
+                if (!res.ok) { showToast(data.error || 'No se pudo aceptar el turno.', 'error'); return; }
+                
+                procesarTurnoAceptado(data);
+            } catch (e) {
+                showToast('Error de conexión.', 'error');
+            }
+        }
+
+        // Helper para procesar la respuesta de aceptación (general o específica)
+        function procesarTurnoAceptado(data) {
+            currentUsuarioId = data.usuario_id || null;
+            document.getElementById('turno-codigo-actual').innerText = data.codigo_turno;
+            if (data.persona) {
+                document.getElementById('info-persona').innerText =
+                    data.persona.nombres + ' · Doc: ' + data.persona.documento;
+            }
+            document.getElementById('card-turno-actual').classList.remove('hidden');
+            actualizarEstadoUI('ocupado');
+            showToast('Turno ' + data.codigo_turno + ' aceptado.', 'success');
+            refreshPollData();
+        }
+
+        // ── Aceptar Turno (Normal / Siguiente) ──────────────────────
         async function aceptarTurno() {
             try {
                 const res  = await fetch('{{ route("asesor.aceptar") }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF, 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 const data = await res.json();
 
@@ -447,21 +460,7 @@
                     return;
                 }
 
-                // Almacenar el usuario_id para el modal
-                currentUsuarioId = data.usuario_id || null;
-
-                // Mostrar card de turno activo
-                document.getElementById('turno-codigo-actual').innerText = data.codigo_turno;
-                if (data.persona) {
-                    document.getElementById('info-persona').innerText =
-                        data.persona.nombres + ' · Doc: ' + data.persona.documento;
-                }
-                document.getElementById('card-turno-actual').classList.remove('hidden');
-
-                actualizarEstadoUI('ocupado');
-                showToast('Turno ' + data.codigo_turno + ' aceptado.', 'success');
-                await refreshPollData();
-
+                procesarTurnoAceptado(data);
             } catch (e) {
                 showToast('Error de conexión.', 'error');
             }
@@ -472,7 +471,11 @@
             try {
                 const res  = await fetch('{{ route("asesor.finalizar") }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF, 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 const data = await res.json();
 
@@ -496,7 +499,11 @@
             try {
                 const res  = await fetch('{{ route("asesor.espera") }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF, 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 const data = await res.json();
 
@@ -514,29 +521,68 @@
             }
         }
 
+        // ── Identificador de Pestaña (Aislamiento) ────────────────
+        if (!sessionStorage.getItem('asesor_tab_id')) {
+            sessionStorage.setItem('asesor_tab_id', 'tab_' + Math.random().toString(36).substr(2, 9));
+        }
+        const TAB_ID = sessionStorage.getItem('asesor_tab_id');
+
         // ── Polling de datos ────────────────────────────────────────
         async function refreshPollData() {
             try {
-                const res  = await fetch('{{ route("asesor.api.estado") }}', {
-                    headers: { 'Accept': 'application/json' }
+                const res  = await fetch('{{ route("asesor.api.estado") }}?window_id=' + TAB_ID, {
+                    headers: { 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
+
+                // Si el servidor nos redirigió (302), significa que la sesión expiró
+                if (res.redirected) {
+                    location.reload(); // Esto disparará la redirección real a sesión finalizada
+                    return;
+                }
+
                 if (res.status === 401) { location.href = '{{ route("asesor.login") }}'; return; }
                 const data = await res.json();
 
-                // Actualizar cola
-                const listaCola = document.getElementById('lista-cola');
-                document.getElementById('cola-count').innerText = data.cola_count;
+                // 1. Actualizar COLA PRIORITARIA (Global para G)
+                const listaPrioritaria = document.getElementById('lista-cola-prioritaria');
 
-                if (data.cola.length === 0) {
+                if (data.cola_prioritaria && data.cola_prioritaria.length > 0) {
+                    listaPrioritaria.innerHTML = data.cola_prioritaria.map(t => `
+                        <div class="flex items-center justify-between bg-white/10 border border-[#ffb500]/30 p-4 rounded-xl shadow-inner animate-in fade-in zoom-in duration-300">
+                            <div>
+                                <p class="text-[#ffb500] text-[10px] font-black uppercase tracking-widest">Turno Especial</p>
+                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                            </div>
+                            <button onclick="aceptarTurnoEspecifico(${t.id})" 
+                                class="bg-[#ffb500] text-[#0a0455] font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-yellow-700">
+                                ATENDER
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    listaPrioritaria.innerHTML = `
+                        <div class="col-span-full py-8 text-center border-2 border-dashed border-white/5 rounded-xl">
+                            <p class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">Sin turnos prioritarios</p>
+                        </div>`;
+                }
+
+                // 2. Actualizar COLA GENERAL (Asignada a mí)
+                const listaCola = document.getElementById('lista-cola');
+                document.getElementById('cola-count').innerText = data.cola_general.length;
+
+                if (data.cola_general.length === 0) {
                     listaCola.innerHTML = `
-                        <div class="text-center py-12">
-                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos en cola</p>
+                        <div class="text-center py-12 border-2 border-dashed border-white/5 rounded-xl">
+                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos generales</p>
                         </div>`;
                 } else {
-                    listaCola.innerHTML = data.cola.map(t => `
-                        <div class="queue-item glass rounded-xl px-5 py-4 border border-white/5 flex items-center justify-between">
+                    listaCola.innerHTML = data.cola_general.map(t => `
+                        <div class="queue-item glass rounded-xl px-5 py-4 border border-white/5 flex items-center justify-between animate-in slide-in-from-right duration-300">
                             <div>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Turno en espera</p>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">General</p>
                                 <p class="text-white font-black text-2xl">${t.codigo}</p>
                             </div>
                             <p class="text-gray-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
@@ -544,22 +590,8 @@
                     `).join('');
                 }
 
-                // Actualizar historial
-                const listaHist = document.getElementById('lista-historial');
-                document.getElementById('contador-atendidos').innerText = data.historial.length;
-                if (data.historial.length === 0) {
-                    listaHist.innerHTML = `<div class="text-center py-8"><p class="text-gray-600 font-semibold uppercase tracking-wider text-sm">Sin atenciones registradas hoy</p></div>`;
-                } else {
-                    listaHist.innerHTML = data.historial.map(h => `
-                        <div class="flex items-center justify-between glass rounded-xl px-5 py-3 border border-white/5">
-                            <span class="text-[#ffb500] font-black text-lg">${h.codigo}</span>
-                            <p class="text-gray-400 text-xs font-semibold">
-                                ${h.hora_inicio ? h.hora_inicio.substring(11,16) : ''}
-                                ${h.hora_fin ? '→ ' + h.hora_fin.substring(11,16) : '<span class="text-blue-400">(activo)</span>'}
-                            </p>
-                        </div>
-                    `).join('');
-                }
+                // Terminado
+                firstLoad = false;
 
             } catch (e) {
                 console.warn('Poll error:', e);
@@ -585,7 +617,10 @@
 
             try {
                 const res = await fetch(`{{ route('asesor.persona.get') }}?usuario_id=${currentUsuarioId}`, {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 const p = await res.json();
 
@@ -632,7 +667,12 @@
             try {
                 const res = await fetch('{{ route("asesor.persona.update") }}', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    headers: { 
+                        'X-CSRF-TOKEN': CSRF, 
+                        'Accept': 'application/json', 
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: JSON.stringify(body)
                 });
                 const result = await res.json();
@@ -666,8 +706,98 @@
             if (e.target === this) cerrarModal();
         });
 
-        // Iniciar polling cada 5 segundos
-        setInterval(refreshPollData, 5000);
+        // ── Inactividad (15 min) ───────────────────────────────────
+        let lastActivityTimestamp = Date.now();
+        let countdownTime = 60;
+        let countdownInterval = null;
+        let heartbeatInterval = null;
+        const IDLE_LIMIT = 14 * 60 * 1000;
+
+        function resetIdleTimer() {
+            if (document.getElementById('modal-timeout').classList.contains('hidden')) {
+                const now = Date.now();
+                if (now - lastActivityTimestamp > 30000) {
+                    enviarHeartbeat();
+                }
+                lastActivityTimestamp = now;
+            }
+        }
+
+        async function enviarHeartbeat() {
+            try {
+                // heartbeat=1 hace que el middleware actualice la actividad.
+                // Enviamos el TAB_ID para que solo esta pestaña sea la "dueña" de la sesión.
+                await fetch('{{ route("asesor.api.estado") }}?heartbeat=1&window_id=' + TAB_ID, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+            } catch (e) { console.error("Error heartbeat", e); }
+        }
+
+        // Detectar actividad
+        ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, true);
+        });
+
+        // Revisar inactividad (timestamp-based)
+        setInterval(() => {
+            const now = Date.now();
+            const inactiveTime = now - lastActivityTimestamp;
+
+            // SOLO mostrar aviso si estamos en estado 'disponible'
+            // Si está en 'en_espera' u 'ocupado', el asesor está "activo" en su labor
+            const estadoActual = document.getElementById('estado-texto').innerText.trim().toLowerCase();
+            const esDisponible = estadoActual === 'disponible';
+
+            if (esDisponible && inactiveTime >= IDLE_LIMIT && document.getElementById('modal-timeout').classList.contains('hidden')) {
+                mostrarAvisoTimeout();
+            } else if (!esDisponible) {
+                // Si no está disponible, mantenemos el timestamp al día para que no salte al volver a disponible
+                lastActivityTimestamp = now;
+            }
+        }, 2000);
+
+        function mostrarAvisoTimeout() {
+            const modal = document.getElementById('modal-timeout');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            countdownTime = 60;
+            document.getElementById('timeout-countdown').innerText = countdownTime;
+            
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownTime--;
+                document.getElementById('timeout-countdown').innerText = countdownTime;
+                if (countdownTime <= 0) {
+                    logoutAhora();
+                }
+            }, 1000);
+        }
+
+        async function continuarSesion() {
+            try {
+                await enviarHeartbeat();
+                clearInterval(countdownInterval);
+                document.getElementById('modal-timeout').classList.add('hidden');
+                document.getElementById('modal-timeout').classList.remove('flex');
+                lastActivityTimestamp = Date.now();
+            } catch (e) {
+                console.error("Error al refrescar sesión", e);
+            }
+        }
+
+        function logoutAhora() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("asesor.logout") }}';
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = CSRF;
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
 
         // Cerrar sesión al cerrar la pestaña/navegador
         window.addEventListener('unload', function() {

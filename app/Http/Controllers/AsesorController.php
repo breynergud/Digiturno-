@@ -41,15 +41,21 @@ class AsesorController extends Controller
         session([
             'asesor_id'   => $asesor->ase_id,
             'asesor_tipo' => $asesor->ase_tipo_asesor,
+            'asesor_ultima_actividad' => time(),
         ]);
 
         return redirect()->route('asesor.dashboard');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget(['asesor_id', 'asesor_tipo']);
+        $request->session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
         return redirect()->route('asesor.login');
+    }
+
+    public function sesionFinalizada()
+    {
+        return view('asesor.finalizada');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -67,6 +73,10 @@ class AsesorController extends Controller
         $cola    = $this->getColaParaTipo($asesor->ase_tipo_asesor);
         $historial = $this->getHistorialHoy($asesor);
 
+        // Establecer un window_id único para esta pestaña (aislamiento)
+        $windowId = bin2hex(random_bytes(8));
+        session(['asesor_window_id' => $windowId]);
+
         return view('asesor.dashboard', compact('asesor', 'cola', 'historial'));
     }
 
@@ -82,15 +92,26 @@ class AsesorController extends Controller
         }
 
         $asesor   = Asesor::findOrFail($asesorId);
-        $cola     = $this->getColaParaTipo($asesor->ase_tipo_asesor);
+        $tipo     = $asesor->ase_tipo_asesor;
+        
+        // 1. Obtener mi cola filtrada (Solo turnos asignados a MÍ / Mi Mesa)
+        $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
+        
+        // 2. Separar por tipo para la interfaz
+        $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
+        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Prioritario'));
+        $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
+
         $historial = $this->getHistorialHoy($asesor);
 
         return response()->json([
             'estado'            => $asesor->ase_estado,
             'turno_actual_id'   => $asesor->ase_turno_actual_id,
             'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
-            'cola_count'        => count($cola),
-            'cola'              => $cola,
+            'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas),
+            'cola_prioritaria'  => $colaPrioritaria,
+            'cola_general'      => $colaGeneral,
+            'cola_victimas'     => $colaVictimas,
             'historial'         => $historial,
         ]);
     }
@@ -163,7 +184,7 @@ class AsesorController extends Controller
     //  ACCIONES
     // ─────────────────────────────────────────────────────────────
 
-    public function aceptarTurno()
+    public function aceptarTurno(Request $request)
     {
         $asesorId = session('asesor_id');
         if (! $asesorId) {
@@ -176,23 +197,48 @@ class AsesorController extends Controller
             return response()->json(['error' => 'El asesor no está disponible.'], 422);
         }
 
-        return DB::transaction(function () use ($asesor) {
-            $tipo    = $asesor->ase_tipo_asesor;
-            $turno   = $this->getSiguienteTurno($tipo);
+        return DB::transaction(function () use ($asesor, $request) {
+            $tipoAsesor     = $asesor->ase_tipo_asesor;
+            $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
+            $turno = null;
+
+            // Si se envió un ID específico (desde la lista de prioritarios o víctimas)
+            if ($request->has('tur_id')) {
+                $turno = TurnoUnificado::where('tur_id', $request->tur_id)
+                    ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id')) // No atendido
+                    ->whereIn('tur_tipo', $tiposPermitidos)
+                    ->first();
+                
+                if ($turno && $turno->ASESOR_ase_id != $asesor->ase_id) {
+                    // Ya no permitimos "robo" de turnos prioritarios/víctimas entre mesas.
+                    // Debe ser estrictamente el asignado.
+                    $turno = null; 
+                }
+            }
+
+            // Fallback por prioridad automátic (Siguiente en mi cola)
+            if (! $turno) {
+                $turno = $this->getSiguienteTurno($tipoAsesor, $asesor->ase_id);
+            }
 
             if (! $turno) {
-                return response()->json(['error' => 'No hay turnos en cola.'], 404);
+                return response()->json(['error' => 'No hay turnos disponibles.'], 404);
             }
 
             // Registrar atención
-            $this->crearAtencion($tipo, $turno, $asesor->ase_id);
+            $this->crearAtencion($turno, $asesor->ase_id);
 
             // Actualizar estado del asesor
             $asesor->update([
                 'ase_estado'           => 'ocupado',
                 'ase_turno_actual_id'  => $turno->tur_id,
-                'ase_turno_actual_tipo'=> $tipo,
+                'ase_turno_actual_tipo'=> $tipoAsesor,
             ]);
+
+            // Actualizar espejo en tabla vieja para la TV
+            \App\Models\Turno::where('codigo_turno', $turno->tur_numero)
+                ->whereDate('created_at', today())
+                ->update(['mesa' => $asesor->ase_mesa]);
 
             // Obtener info del cliente
             $persona = $this->getPersonaDelTurno($turno);
@@ -267,42 +313,58 @@ class AsesorController extends Controller
         };
     }
 
-    /** Obtiene los turnos pendientes (sin atención registrada) según el tipo de asesor */
+    /** Obtiene los turnos pendientes (sin atención registrada) asignados a este asesor específico */
     private function getColaParaTipo(string $tipo): array
     {
-        $tipoStr = $this->mapearTipo($tipo);
+        $asesorId = session('asesor_id');
+        if (! $asesorId) return [];
+
+        $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', $tipoStr)
+            ->whereIn('tur_tipo', $tiposPermitidos)
+            ->where('ASESOR_ase_id', $asesorId) // <-- Filtro por asesor asignado
             ->whereDate('tur_hora_fecha', today())
+            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id')
             ->get()
             ->map(fn($t) => [
                 'id'     => $t->tur_id,
                 'codigo' => $t->tur_numero,
                 'hora'   => $t->tur_hora_fecha,
-                'tipo'   => $tipo,
+                'tipo'   => $t->tur_tipo,
             ])->toArray();
     }
 
-    private function getSiguienteTurno(string $tipo)
+    private function getSiguienteTurno(string $tipo, int $asesorId)
     {
-        $tipoStr = $this->mapearTipo($tipo);
+        $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', $tipoStr)
+            ->whereIn('tur_tipo', $tiposPermitidos)
+            ->where('ASESOR_ase_id', $asesorId) // <-- Filtro por asesor asignado
             ->whereDate('tur_hora_fecha', today())
+            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id')
             ->first();
     }
 
-    private function crearAtencion(string $tipo, $turno, int $asesorId): void
+    private function obtenerTiposPermitidos(string $tipoAsesor): array
     {
-        $atnc_tipo = match($tipo) {
-            'V' => 'Victimas',
-            'P' => 'Prioritaria', // "Prioritaria" con 'A' como dictaba tu ENUM
+        return match($tipoAsesor) {
+            'V' => ['Victimas'],
+            'G' => ['Prioritario', 'General'],
+            default => ['General'],
+        };
+    }
+
+    private function crearAtencion($turno, int $asesorId): void
+    {
+        $atnc_tipo = match($turno->tur_tipo) {
+            'Victimas' => 'Victimas',
+            'Prioritario' => 'Prioritaria',
             default => 'General',
         };
 

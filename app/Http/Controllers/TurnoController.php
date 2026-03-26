@@ -87,28 +87,71 @@ class TurnoController extends Controller
             $codigo = $prefijo . '-' . str_pad($numero, 3, '0', STR_PAD_LEFT);
 
             // 3. Crear el turno unificado
-            TurnoUnificado::create([
+            $turnoUnificado = TurnoUnificado::create([
                 'tur_hora_fecha' => now(),
                 'tur_numero' => $codigo,
                 'tur_tipo' => $tur_tipo,
                 'USUARIO_user_id' => $usuario->user_id
             ]);
 
-            // Mantenemos espejo en la tabla vieja para la TV (compatibilidad)
+            // 4. Buscar Asesor para Pre-asignación Balanceada
+            $asesorAsignado = null;
+            if ($request->tipo_atencion !== 'empresario') {
+                $queryAdvisors = \App\Models\Asesor::query();
+                if ($request->tipo_atencion === 'victimas') {
+                    $queryAdvisors->whereIn('ase_tipo_asesor', ['V', 'G']);
+                } else {
+                    $queryAdvisors->where('ase_tipo_asesor', 'G');
+                }
+                
+                $advisors = $queryAdvisors->get();
+
+                // Algoritmo: Menor carga de trabajo (pendientes + activos)
+                $bestAdvisor = null;
+                $minLoad = 999999;
+
+                foreach ($advisors as $adv) {
+                    $load = TurnoUnificado::where('ASESOR_ase_id', $adv->ase_id)
+                        ->where(function($q) {
+                            $q->whereDoesntHave('atencion') // Pendiente
+                              ->orWhereHas('atencion', function($sq) { // O en proceso
+                                  $sq->whereNull('atnc_hora_fin');
+                              });
+                        })
+                        ->whereDate('tur_hora_fecha', today())
+                        ->count();
+
+                    if ($load < $minLoad) {
+                        $minLoad = $load;
+                        $bestAdvisor = $adv;
+                    }
+                }
+                $asesorAsignado = $bestAdvisor;
+            }
+
+            $mesaAsignada = $asesorAsignado ? $asesorAsignado->ase_mesa : 0;
+
+            // 5. Vincular asesor al turno unificado
+            if ($asesorAsignado) {
+                $turnoUnificado->update(['ASESOR_ase_id' => $asesorAsignado->ase_id]);
+            }
+
+            // 6. Mantenemos espejo en la tabla vieja para la TV
             $turno = Turno::create([
                 'tipo_atencion' => $request->tipo_atencion,
                 'tipo_documento' => $request->pers_tipodoc,
                 'numero_documento' => $request->numero_documento,
                 'telefono' => $request->telefono,
                 'codigo_turno' => $codigo,
-                'mesa' => rand(1, 5),
+                'mesa' => $mesaAsignada,
             ]);
 
             return response()->json([
                 'success' => true,
                 'codigo' => $codigo,
                 'tipo' => $request->tipo_atencion,
-                'mesa' => $turno->mesa
+                'mesa' => $mesaAsignada,
+                'asignado' => $asesorAsignado ? true : false
             ]);
         });
     }
@@ -130,28 +173,49 @@ class TurnoController extends Controller
     }
 
     /**
-     * Devuelve SOLO los turnos pendientes (no atendidos) para cada tipo.
-     * La pantalla TV filtra los que ya fueron aceptados por un asesor.
+     * Devuelve los turnos que están asignados a una mesa y siguen vigentes.
      */
     public function pendingTurns()
     {
-        $codigosAtendidos = TurnoUnificado::whereHas('atencion')
-            ->whereDate('tur_hora_fecha', today())
-            ->pluck('tur_numero')
-            ->toArray();
+        $hoy = today();
 
-        // Últimos turnos por tipo que NO han sido atendidos
-        $tipos = ['victimas', 'especial', 'general', 'empresario'];
-        $result = [];
+        // 1. Turnos que están esperando (asignados pero no aceptados aún)
+        $waitingTurns = TurnoUnificado::whereNotNull('ASESOR_ase_id')
+            ->whereDoesntHave('atencion')
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->orderBy('tur_id', 'asc') // El más viejo primero para la cola
+            ->get();
 
-        foreach ($tipos as $tipo) {
-            $turno = Turno::where('tipo_atencion', $tipo)
-                ->whereDate('created_at', today())
-                ->whereNotIn('codigo_turno', $codigosAtendidos)
-                ->orderBy('id', 'desc')
-                ->first();
-            if ($turno) {
-                $result[] = $turno;
+        // 2. Turnos que acaban de ser aceptados (Llamado en curso)
+        // Definimos "reciente" como los últimos 20 segundos
+        $callingTurns = TurnoUnificado::whereHas('atencion', function($q) {
+                $q->whereNull('atnc_hora_fin')
+                  ->where('atnc_hora_inicio', '>=', now()->subSeconds(20));
+            })
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->orderBy('tur_id', 'desc')
+            ->get();
+
+        $result = [
+            'waiting' => [],
+            'calling' => []
+        ];
+
+        foreach ($waitingTurns as $tu) {
+            $turnoEspejo = Turno::where('codigo_turno', $tu->tur_numero)->whereDate('created_at', $hoy)->first();
+            if ($turnoEspejo) {
+                $turnoEspejo->is_active = false;
+                $result['waiting'][] = $turnoEspejo;
+            }
+        }
+
+        foreach ($callingTurns as $tu) {
+            $turnoEspejo = Turno::where('codigo_turno', $tu->tur_numero)->whereDate('created_at', $hoy)->first();
+            if ($turnoEspejo) {
+                $turnoEspejo->is_active = true;
+                $turnoEspejo->atencion_id = $tu->atencion->atnc_id;
+                $turnoEspejo->llamado_at = $tu->atencion->atnc_hora_inicio;
+                $result['calling'][] = $turnoEspejo;
             }
         }
 
