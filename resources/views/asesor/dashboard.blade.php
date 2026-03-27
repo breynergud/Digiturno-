@@ -343,7 +343,21 @@
     {{-- ─── SCRIPTS ─────────────────────────────────────────────── --}}
     <script>
         const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        let currentUsuarioId = null; // almacena el usuario_id del turno activo
+        
+        /**
+         * Helper para validar la respuesta de fetch.
+         * Si detecta redirección o error 419 (CSRF), recarga la página.
+         */
+        async function handleFetchResponse(res) {
+            if (res.redirected || res.status === 419) {
+                console.warn('Sesión expirada o error 419. Recargando...');
+                location.reload();
+                return null;
+            }
+            return res;
+        }
+
+        let currentUsuarioId = null; 
 
         // ── Toast ──────────────────────────────────────────────────
         function showToast(msg, tipo = 'success') {
@@ -409,7 +423,7 @@
         // ── Aceptar Turno Específico (Prioritarios) ────────────────
         async function aceptarTurnoEspecifico(turId) {
             try {
-                const res = await fetch('{{ route("asesor.aceptar") }}', {
+                let res = await fetch('{{ route("asesor.aceptar") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
@@ -419,6 +433,10 @@
                     },
                     body: JSON.stringify({ tur_id: turId })
                 });
+                
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (!res.ok) { showToast(data.error || 'No se pudo aceptar el turno.', 'error'); return; }
                 
@@ -445,7 +463,7 @@
         // ── Aceptar Turno (Normal / Siguiente) ──────────────────────
         async function aceptarTurno() {
             try {
-                const res  = await fetch('{{ route("asesor.aceptar") }}', {
+                let res = await fetch('{{ route("asesor.aceptar") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
@@ -453,6 +471,10 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -469,7 +491,7 @@
         // ── Finalizar Atención ─────────────────────────────────────
         async function finalizarAtencion() {
             try {
-                const res  = await fetch('{{ route("asesor.finalizar") }}', {
+                let res = await fetch('{{ route("asesor.finalizar") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
@@ -477,6 +499,10 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -497,7 +523,7 @@
         // ── Toggle Espera ──────────────────────────────────────────
         async function toggleEspera() {
             try {
-                const res  = await fetch('{{ route("asesor.espera") }}', {
+                let res  = await fetch('{{ route("asesor.espera") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
@@ -505,6 +531,10 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -665,7 +695,7 @@
             body['_method'] = 'PUT';
 
             try {
-                const res = await fetch('{{ route("asesor.persona.update") }}', {
+                let res = await fetch('{{ route("asesor.persona.update") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
@@ -675,6 +705,10 @@
                     },
                     body: JSON.stringify(body)
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const result = await res.json();
 
                 if (!res.ok) {

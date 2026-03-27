@@ -207,18 +207,13 @@ class AsesorController extends Controller
                 $turno = TurnoUnificado::where('tur_id', $request->tur_id)
                     ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id')) // No atendido
                     ->whereIn('tur_tipo', $tiposPermitidos)
+                    ->where('tur_mesa', $asesor->ase_mesa) // Estricto a mi mesa
                     ->first();
-                
-                if ($turno && $turno->ASESOR_ase_id != $asesor->ase_id) {
-                    // Ya no permitimos "robo" de turnos prioritarios/víctimas entre mesas.
-                    // Debe ser estrictamente el asignado.
-                    $turno = null; 
-                }
             }
 
-            // Fallback por prioridad automátic (Siguiente en mi cola)
+            // Fallback por prioridad automática (Siguiente en mi mesa)
             if (! $turno) {
-                $turno = $this->getSiguienteTurno($tipoAsesor, $asesor->ase_id);
+                $turno = $this->getSiguienteTurno($tipoAsesor, $asesor);
             }
 
             if (! $turno) {
@@ -313,18 +308,18 @@ class AsesorController extends Controller
         };
     }
 
-    /** Obtiene los turnos pendientes (sin atención registrada) asignados a este asesor específico */
-    private function getColaParaTipo(string $tipo): array
+    /** Obtiene los turnos pendientes asignados a la mesa de este asesor */
+    private function getColaParaTipo(string $tipo, int $asesorId): array
     {
-        $asesorId = session('asesor_id');
-        if (! $asesorId) return [];
+        $asesor = Asesor::find($asesorId);
+        if (!$asesor) return [];
 
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
-            ->where('ASESOR_ase_id', $asesorId) // <-- Filtro por asesor asignado
+            ->where('tur_mesa', $asesor->ase_mesa) // <-- Filtro por MESA
             ->whereDate('tur_hora_fecha', today())
             ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id')
@@ -337,14 +332,14 @@ class AsesorController extends Controller
             ])->toArray();
     }
 
-    private function getSiguienteTurno(string $tipo, int $asesorId)
+    private function getSiguienteTurno(string $tipoAsesor, Asesor $asesor)
     {
-        $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
+        $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
-            ->where('ASESOR_ase_id', $asesorId) // <-- Filtro por asesor asignado
+            ->where('tur_mesa', $asesor->ase_mesa) // <-- Filtro por MESA
             ->whereDate('tur_hora_fecha', today())
             ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id')

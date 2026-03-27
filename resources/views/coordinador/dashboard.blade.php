@@ -235,6 +235,19 @@
     <script>
         const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+        /**
+         * Helper para validar la respuesta de fetch.
+         * Si detecta redirección o error 419 (CSRF), recarga la página.
+         */
+        async function handleFetchResponse(res) {
+            if (res.redirected || res.status === 419) {
+                console.warn('Sesión expirada o error 419. Recargando...');
+                location.reload();
+                return null;
+            }
+            return res;
+        }
+
         function openModal() {
             document.getElementById('modalAsesor').classList.remove('hidden');
             document.getElementById('modalAsesor').classList.add('flex');
@@ -248,7 +261,7 @@
             e.preventDefault();
             const formData = new FormData(this);
             try {
-                const res = await fetch('{{ route('coordinador.asesor.store') }}', {
+                let res = await fetch('{{ route('coordinador.asesor.store') }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF_TOKEN,
@@ -256,6 +269,10 @@
                     },
                     body: formData
                 });
+                
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     alert('Asesor registrado correctamente');
@@ -268,13 +285,17 @@
 
         async function aceptarTurno() {
             try {
-                const res = await fetch('{{ route('coordinador.aceptar') }}', {
+                let res = await fetch('{{ route('coordinador.aceptar') }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF_TOKEN,
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     alert('Turno aceptado: ' + data.codigo_turno);
@@ -288,7 +309,7 @@
         async function cambiarTipo(select, ase_id) {
             const nuevo_tipo = select.value;
             try {
-                const res = await fetch('{{ route('coordinador.reasignar') }}', {
+                let res = await fetch('{{ route('coordinador.reasignar') }}', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -297,6 +318,10 @@
                     },
                     body: JSON.stringify({ ase_id, nuevo_tipo })
                 });
+
+                res = await handleFetchResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     // Feedback visual suave
@@ -315,15 +340,12 @@
         // Polling para actualizar estados
         setInterval(async () => {
             try {
-                const res = await fetch('{{ route('coordinador.api.estado') }}?window_id=' + TAB_ID, {
+                let res = await fetch('{{ route('coordinador.api.estado') }}?window_id=' + TAB_ID, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
-                // Si el servidor nos redirigió (302), significa que la sesión expiró
-                if (res.redirected) {
-                    location.reload();
-                    return;
-                }
+                res = await handleFetchResponse(res);
+                if (!res) return;
 
                 const data = await res.json();
                 document.getElementById('empresario-count').innerText = data.colaEmpresario.length;
@@ -352,9 +374,10 @@
             try {
                 // heartbeat=1 hace que el middleware actualice la actividad.
                 // Enviamos el TAB_ID para que solo esta pestaña sea la "dueña" de la sesión.
-                await fetch('{{ route("coordinador.api.estado") }}?heartbeat=1&window_id=' + TAB_ID, {
+                let res = await fetch('{{ route("coordinador.api.estado") }}?heartbeat=1&window_id=' + TAB_ID, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
+                await handleFetchResponse(res);
             } catch (e) { console.error("Error heartbeat", e); }
         }
 
