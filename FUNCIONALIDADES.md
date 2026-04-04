@@ -1,37 +1,40 @@
 # Funcionalidades del Sistema APE Digiturno
 
-Este sistema ha sido diseñado para optimizar el flujo de atención al ciudadano en las oficinas de la Agencia Pública de Empleo.
+Este sistema ayuda a organizar la atención de las personas en las oficinas de la Agencia Pública de Empleo del SENA de forma rápida y ordenada.
 
-## 🛠️ Listado de Funcionalidades
+## 🛠️ ¿Qué puede hacer el sistema?
 
-### 1. Generación de Turnos (Autogestión)
-- **Interfaz Tactil:** Pantalla optimizada para kioscos con teclado numérico en pantalla.
-- **Categorización:** Generación de turnos específicos según el tipo de atención:
-  - **General (G):** Atención estándar.
-  - **Víctimas (V):** Prioridad legal.
-  - **Especial (E):** Personas con discapacidad o adultos mayores.
-  - **Preferencial (P):** Atención prioritaria.
-  - **Empresario (EMP):** Atención exclusiva para empleadores.
-- **Validación:** Registro rápido mediante número de documento y teléfono.
+### 1. Pedir un Turno (Kiosco)
+- **Pantalla Fácil:** Diseñada para tocar con los dedos, con un teclado numérico grande.
+- **Diferentes filas:** Puedes elegir según tu necesidad:
+  - **General:** Atención normal.
+  - **Víctimas:** Atención prioritaria por ley.
+  - **Especiales:** Para personas mayores o con discapacidad.
+  - **Prioritario:** Atención de urgencia o especial.
+  - **Empresarios:** Atención para empresas.
 
-### 2. Monitorización (Pantalla TV)
-- **Visualización en Tiempo Real:** Lista de turnos siendo atendidos y turnos en espera.
-- **Notificaciones Sonoras:** Alerta auditiva ("ding") cuando se llama a un nuevo turno.
-- **Identidad APE:** Diseño corporativo con marquesina informativa.
+### 2. Ver tu turno (Pantalla de TV)
+- **En tiempo real:** Muestra quién está siendo atendido y quién sigue.
+- **Sonido de aviso:** Suena un "ding" cada vez que llaman a alguien.
+- **Información extra:** Mensajes informativos en la parte inferior.
 
-### 3. Panel del Asesor
-- **Gestión de Turnos:** Llamar al siguiente turno, finalizar atención o poner en espera.
-- **Aislamiento de Actividad:** Cada pestaña del dashboard se aísla mediante un ID único (`window_id`), evitando que otras pestañas del mismo navegador reseteen el contador de inactividad.
-- **Seguridad Dinámica:** Detección de redirección por AJAX; si la sesión expira en el servidor, la interfaz se bloquea y redirige al usuario automáticamente.
-- **Colas Personalizadas:** Visualización separada y permanente de turnos **Prioritarios** y **Generales** según la pre-asignación de la mesa.
+### 3. Panel de los Asesores
+- **Llamar y Atender:** Botones simples para llamar al siguiente o finalizar.
+- **Estados:** Puedes ponerte "Disponible" para trabajar o en "Descanso".
+- **Privacidad:** Si abres varias pestañas, el sistema no se confunde.
+- **Seguridad:** Si dejas de usarlo mucho tiempo, se cierra solo por seguridad.
+- **Fila propia:** Cada asesor ve los turnos que le corresponden a su mesa.
 
-### 4. Panel del Coordinador (Administración)
-- **Asignación de Mesas:** Gestión de mesas (1-20) para cada asesor desde su registro.
-- **Monitor de Estados:** Visualización en tiempo real del estado de cada asesor y su carga de trabajo.
-- **Asignación de Colas:** Posibilidad de cambiar el tipo de atención que recibe cada asesor dinámicamente.
-- **Reportes:** Generación de reportes semanales de rendimiento y flujo de usuarios.
+### 4. Inteligencia de Turnos (¡Nuevo!)
+- **Nadie espera demasiado:** Si alguien de la fila general espera más de 35 minutos, el sistema lo pone de primero automáticamente.
+- **Apoyo entre compañeros:** Si un asesor termina su fila, el sistema le trae turnos de otras mesas para ayudar.
+- **Aviso Naranja:** Cuando terminas de atender, si hay alguien prioritario esperando en tu mesa, el sistema te saca un aviso naranja para recordártelo.
 
-## 🎨 Diseño y UX
-- **Responsive Design:** Adaptable desde dispositivos móviles hasta pantallas de gran formato (40"+).
-- **Estética Moderno:** Uso de Tailwind CSS con efectos de cristal (glassmorphism) y animaciones fluidas.
-- **Accesibilidad:** Fuentes de alta legibilidad (Montserrat) y contrastes optimizados.
+### 5. Rapidez del Sistema (Optimización)
+- **Memoria Veloz:** Usamos una memoria especial para que todo cargue al instante y no se trabe.
+- **Búsqueda Inteligente:** El sistema busca los datos de forma muy eficiente para que siempre esté rápido.
+
+## 🎨 Diseño
+- **Colores SENA:** Usa el verde y blanco institucional.
+- **Moderno:** Pantallas limpias, letras grandes y fáciles de leer.
+- **Adaptable:** Se ve bien en tablets, computadores y televisores grandes.

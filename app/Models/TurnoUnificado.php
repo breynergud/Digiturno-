@@ -17,6 +17,7 @@ class TurnoUnificado extends Model
         'tur_hora_fecha',
         'tur_numero',
         'tur_tipo',
+        'tur_mesa',
         'USUARIO_user_id',
         'ASESOR_ase_id',
     ];

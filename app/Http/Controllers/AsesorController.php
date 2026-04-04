@@ -10,6 +10,7 @@ use App\Models\Atencion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class AsesorController extends Controller
 {
@@ -70,7 +71,7 @@ class AsesorController extends Controller
         }
 
         $asesor  = Asesor::with('persona')->findOrFail($asesorId);
-        $cola    = $this->getColaParaTipo($asesor->ase_tipo_asesor);
+        $cola    = $this->getColaParaTipo($asesor->ase_tipo_asesor, $asesorId);
         $historial = $this->getHistorialHoy($asesor);
 
         // Establecer un window_id único para esta pestaña (aislamiento)
@@ -94,8 +95,11 @@ class AsesorController extends Controller
         $asesor   = Asesor::findOrFail($asesorId);
         $tipo     = $asesor->ase_tipo_asesor;
         
-        // 1. Obtener mi cola filtrada (Solo turnos asignados a MÍ / Mi Mesa)
-        $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
+        // 1. Obtener mi cola filtrada (Cacheado por 5s para reducir carga de polling múltiple)
+        $cacheKey = "cola_asesor_{$asesorId}";
+        $colaPersonal = Cache::remember($cacheKey, 5, function() use ($tipo, $asesorId) {
+            return $this->getColaParaTipo($tipo, $asesorId);
+        });
         
         // 2. Separar por tipo para la interfaz
         $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
@@ -211,7 +215,7 @@ class AsesorController extends Controller
                     ->first();
             }
 
-            // Fallback por prioridad automática (Siguiente en mi mesa)
+            // Fallback por prioridad automática (Siguiente en mi mesa o Desbordamiento)
             if (! $turno) {
                 $turno = $this->getSiguienteTurno($tipoAsesor, $asesor);
             }
@@ -222,6 +226,16 @@ class AsesorController extends Controller
 
             // Registrar atención
             $this->crearAtencion($turno, $asesor->ase_id);
+
+            // Invalidar cachés
+            Cache::forget('tv_pending_turns');
+            Cache::forget("cola_asesor_{$asesor->ase_id}");
+
+            // Re-vincular el turno unificado al asesor actual (por si se desbordó de otra mesa)
+            $turno->update([
+                'tur_mesa'      => $asesor->ase_mesa,
+                'ASESOR_ase_id' => $asesor->ase_id,
+            ]);
 
             // Actualizar estado del asesor
             $asesor->update([
@@ -249,7 +263,7 @@ class AsesorController extends Controller
         });
     }
 
-    public function finalizarAtencion()
+    public function finalizaratencion(Request $request)
     {
         $asesorId = session('asesor_id');
         if (! $asesorId) {
@@ -263,9 +277,14 @@ class AsesorController extends Controller
         }
 
         $turnoId = $asesor->ase_turno_actual_id;
+        $estadoAtencion = $request->input('estado', 'atendido'); // Puede llegar 'ausente'
 
         // Actualizar hora_fin del registro de atención
-        $this->cerrarAtencion($turnoId, $asesor->ase_id);
+        $this->cerrarAtencion($turnoId, $asesor->ase_id, $estadoAtencion);
+
+        // Invalidar cachés
+        Cache::forget('tv_pending_turns');
+        Cache::forget("cola_asesor_{$asesorId}");
 
         $asesor->update([
             'ase_estado'            => 'disponible',
@@ -337,12 +356,40 @@ class AsesorController extends Controller
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
-        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
+        $hoy = today();
+
+        // 1. Inanición (Prioridad Dinámica): Buscar General con más de 35 min de espera
+        if (in_array('General', $tiposPermitidos)) {
+            $turnoCritico = TurnoUnificado::whereNotIn('tur_id', $atendidos)
+                ->where('tur_tipo', 'General')
+                ->where('tur_mesa', $asesor->ase_mesa)
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->where('tur_hora_fecha', '<=', now()->subMinutes(35))
+                ->orderBy('tur_id', 'asc') // El más viejo
+                ->first();
+            
+            if ($turnoCritico) return $turnoCritico;
+        }
+
+        // 2. Comportamiento normal: Buscar en MI mesa
+        $turnoNormal = TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
             ->where('tur_mesa', $asesor->ase_mesa) // <-- Filtro por MESA
-            ->whereDate('tur_hora_fecha', today())
+            ->whereDate('tur_hora_fecha', $hoy)
             ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
-            ->orderBy('tur_id')
+            ->orderBy('tur_id', 'asc')
+            ->first();
+
+        if ($turnoNormal) return $turnoNormal;
+
+        // 3. Desbordamiento: Si mi mesa no tiene turnos, robar de otra mesa
+        // que coincida con mis tipos permitidos.
+        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->whereIn('tur_tipo', $tiposPermitidos)
+            // Sin filtro de mesa
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
+            ->orderBy('tur_id', 'asc')
             ->first();
     }
 
@@ -351,6 +398,7 @@ class AsesorController extends Controller
         return match($tipoAsesor) {
             'V' => ['Victimas'],
             'G' => ['Prioritario', 'General'],
+            'GO'=> ['General'],
             default => ['General'],
         };
     }
@@ -372,12 +420,15 @@ class AsesorController extends Controller
         ]);
     }
 
-    private function cerrarAtencion(int $turnoId, int $asesorId): void
+    private function cerrarAtencion(int $turnoId, int $asesorId, string $estado = 'atendido'): void
     {
         Atencion::where('TURNO_tur_id', $turnoId)
             ->where('ASESOR_ase_id', $asesorId)
             ->whereNull('atnc_hora_fin')
-            ->update(['atnc_hora_fin' => now()]);
+            ->update([
+                'atnc_hora_fin' => now(),
+                'atnc_estado'   => $estado
+            ]);
     }
 
     private function getPersonaDelTurno($turno): ?array

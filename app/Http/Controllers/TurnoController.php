@@ -8,6 +8,7 @@ use App\Models\Persona;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class TurnoController extends Controller
 {
@@ -86,11 +87,15 @@ class TurnoController extends Controller
             $numero = max($numeroEspecifico, $numeroViejo) + 1;
             $codigo = $prefijo . '-' . str_pad($numero, 3, '0', STR_PAD_LEFT);
 
+            // Invalidar el caché de la TV al crear un nuevo turno
+            Cache::forget('tv_pending_turns');
+
             // 3. Crear el turno unificado
             $turnoUnificado = TurnoUnificado::create([
                 'tur_hora_fecha' => now(),
                 'tur_numero' => $codigo,
                 'tur_tipo' => $tur_tipo,
+                'tur_mesa' => 0, 
                 'USUARIO_user_id' => $usuario->user_id
             ]);
 
@@ -133,7 +138,10 @@ class TurnoController extends Controller
 
             // 5. Vincular asesor al turno unificado
             if ($asesorAsignado) {
-                $turnoUnificado->update(['ASESOR_ase_id' => $asesorAsignado->ase_id]);
+                $turnoUnificado->update([
+                    'ASESOR_ase_id' => $asesorAsignado->ase_id,
+                    'tur_mesa'      => $asesorAsignado->ase_mesa,
+                ]);
             }
 
             // 6. Mantenemos espejo en la tabla vieja para la TV
@@ -177,49 +185,55 @@ class TurnoController extends Controller
      */
     public function pendingTurns()
     {
-        $hoy = today();
+        return Cache::remember('tv_pending_turns', 60, function() {
+            $hoy = today();
 
-        // 1. Turnos que están esperando (asignados pero no aceptados aún)
-        $waitingTurns = TurnoUnificado::whereNotNull('ASESOR_ase_id')
-            ->whereDoesntHave('atencion')
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id', 'asc') // El más viejo primero para la cola
-            ->get();
+            // 1. Turnos que están esperando (asignados pero no aceptados aún)
+            $waitingTurns = TurnoUnificado::whereNotNull('ASESOR_ase_id')
+                ->whereDoesntHave('atencion')
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->orderBy('tur_id', 'asc')
+                ->get();
 
-        // 2. Turnos que acaban de ser aceptados (Llamado en curso)
-        // Definimos "reciente" como los últimos 20 segundos
-        $callingTurns = TurnoUnificado::whereHas('atencion', function($q) {
-                $q->whereNull('atnc_hora_fin')
-                  ->where('atnc_hora_inicio', '>=', now()->subSeconds(20));
-            })
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id', 'desc')
-            ->get();
+            // 2. Turnos que acaban de ser aceptados (Llamado en curso)
+            $callingTurns = TurnoUnificado::with('atencion')
+                ->whereHas('atencion', function($q) {
+                    $q->whereNull('atnc_hora_fin')
+                      ->where('atnc_hora_inicio', '>=', now()->subSeconds(20));
+                })
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->orderBy('tur_id', 'desc')
+                ->get();
 
-        $result = [
-            'waiting' => [],
-            'calling' => []
-        ];
+            // Optimización N+1: Cargar turnos espejo de una vez
+            $codigos = $waitingTurns->pluck('tur_numero')->merge($callingTurns->pluck('tur_numero'))->toArray();
+            $espejos = Turno::whereIn('codigo_turno', $codigos)->whereDate('created_at', $hoy)->get()->keyBy('codigo_turno');
 
-        foreach ($waitingTurns as $tu) {
-            $turnoEspejo = Turno::where('codigo_turno', $tu->tur_numero)->whereDate('created_at', $hoy)->first();
-            if ($turnoEspejo) {
-                $turnoEspejo->is_active = false;
-                $result['waiting'][] = $turnoEspejo;
+            $result = [
+                'waiting' => [],
+                'calling' => []
+            ];
+
+            foreach ($waitingTurns as $tu) {
+                if (isset($espejos[$tu->tur_numero])) {
+                    $turnoEspejo = $espejos[$tu->tur_numero];
+                    $turnoEspejo->is_active = false;
+                    $result['waiting'][] = $turnoEspejo;
+                }
             }
-        }
 
-        foreach ($callingTurns as $tu) {
-            $turnoEspejo = Turno::where('codigo_turno', $tu->tur_numero)->whereDate('created_at', $hoy)->first();
-            if ($turnoEspejo) {
-                $turnoEspejo->is_active = true;
-                $turnoEspejo->atencion_id = $tu->atencion->atnc_id;
-                $turnoEspejo->llamado_at = $tu->atencion->atnc_hora_inicio;
-                $result['calling'][] = $turnoEspejo;
+            foreach ($callingTurns as $tu) {
+                if (isset($espejos[$tu->tur_numero])) {
+                    $turnoEspejo = $espejos[$tu->tur_numero];
+                    $turnoEspejo->is_active = true;
+                    $turnoEspejo->atencion_id = $tu->atencion->atnc_id;
+                    $turnoEspejo->llamado_at = $tu->atencion->atnc_hora_inicio;
+                    $result['calling'][] = $turnoEspejo;
+                }
             }
-        }
 
-        return response()->json($result);
+            return $result;
+        });
     }
 
     public function tv()

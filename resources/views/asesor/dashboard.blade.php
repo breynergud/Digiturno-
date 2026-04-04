@@ -150,12 +150,18 @@
                         Ver Detalles
                     </button>
                     <button
-                        onclick="finalizarAtencion()"
-                        class="btn-danger flex-1 text-white font-extrabold py-2.5 rounded-xl uppercase tracking-widest text-xs border-b-4 border-red-900"
+                        onclick="finalizarAtencion('atendido')"
+                        class="bg-green-600 hover:bg-green-700 flex-1 text-white font-extrabold py-2.5 rounded-xl uppercase tracking-widest text-xs border-b-4 border-green-900 transition-colors"
                     >
                         ✓ Finalizar
                     </button>
                 </div>
+                <button
+                    onclick="finalizarAtencion('ausente')"
+                    class="w-full mt-2 bg-transparent border border-gray-600 border-dashed text-gray-500 font-bold py-2 rounded-xl uppercase tracking-widest text-[10px] hover:border-red-500 hover:text-red-400 transition-colors"
+                >
+                    ✕ El usuario no se presentó
+                </button>
             </div>
 
             {{-- Tarjeta: Acciones Principales --}}
@@ -235,6 +241,28 @@
         </div>
         </div>
     </main>
+
+    <!-- ─── MODAL RECORDATORIO TURNO ESPECIAL ────────────────────── -->
+    <div id="modal-prioridad" class="fixed inset-0 z-[100] hidden items-center justify-center bg-[#0a0455]/90 backdrop-blur-md px-4">
+        <div class="bg-[#1a1465] border-2 border-[#ffb500] w-full max-w-md rounded-3xl p-8 shadow-[0_0_50px_rgba(255,181,0,0.3)] animate-in zoom-in duration-300">
+            <div class="flex justify-center mb-6 text-[#ffb500]">
+                <div class="bg-[#ffb500]/10 p-5 rounded-full ring-8 ring-[#ffb500]/5">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+            </div>
+            <h3 class="text-2xl font-black text-white text-center mb-2 uppercase tracking-tighter italic">¡Turno Especial Pendiente!</h3>
+            <p class="text-gray-400 text-center mb-8 px-4 text-sm font-medium leading-relaxed">Hay un ciudadano de atención preferencial asignado a su mesa esperando ser llamado. ¿Desea atenderlo ahora?</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="cerrarRecordatorio()" class="py-4 rounded-2xl bg-white/5 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-colors">
+                    Ver después
+                </button>
+                <button onclick="aceptarPrioritarioModal()" class="py-4 rounded-2xl bg-[#ffb500] text-[#0a0455] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-yellow-600/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    ATENDER YA
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- ─── MODAL DATOS PERSONA ────────────────────────────── -->
     <div id="modal-persona" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);">
@@ -357,7 +385,20 @@
             return res;
         }
 
-        let currentUsuarioId = null; 
+        let currentUsuarioId = null;
+        let lastPriorityCount = 0;
+        let showReminderLock = false; // Bloqueo para no repetir el modal a cada rato
+
+        async function aceptarPrioritarioModal() {
+            cerrarRecordatorio();
+            aceptarTurno();
+        }
+
+        function cerrarRecordatorio() {
+            document.getElementById('modal-prioridad').classList.add('hidden');
+            document.getElementById('modal-prioridad').classList.remove('flex');
+            showReminderLock = true;
+        } 
 
         // ── Toast ──────────────────────────────────────────────────
         function showToast(msg, tipo = 'success') {
@@ -489,15 +530,17 @@
         }
 
         // ── Finalizar Atención ─────────────────────────────────────
-        async function finalizarAtencion() {
+        async function finalizarAtencion(estado = 'atendido') {
             try {
                 let res = await fetch('{{ route("asesor.finalizar") }}', {
                     method: 'POST',
                     headers: { 
                         'X-CSRF-TOKEN': CSRF, 
                         'Accept': 'application/json',
+                        'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    },
+                    body: JSON.stringify({ estado: estado })
                 });
 
                 res = await handleFetchResponse(res);
@@ -620,7 +663,30 @@
                     `).join('');
                 }
 
-                // Terminado
+                // 3. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
+                const estadoActual = document.getElementById('estado-texto').innerText.trim().toLowerCase();
+                const prioritariosCount = data.cola_prioritaria ? data.cola_prioritaria.length : 0;
+
+                if (prioritariosCount > 0 && estadoActual === 'disponible') {
+                    // Si el número de prioritarios creció, desbloqueamos el aviso
+                    if (prioritariosCount > lastPriorityCount) {
+                        showReminderLock = false;
+                    }
+                    
+                    if (!showReminderLock) {
+                        const modalP = document.getElementById('modal-prioridad');
+                        if (modalP.classList.contains('hidden')) {
+                            // Audio (opcional, solo si el user lo permite)
+                            // const beep = new Audio('/audio/notify.mp3'); beep.play().catch(e => {});
+                            modalP.classList.remove('hidden');
+                            modalP.classList.add('flex');
+                        }
+                    }
+                } else if (prioritariosCount === 0) {
+                    showReminderLock = false; // Reset si se vacía la cola
+                }
+                
+                lastPriorityCount = prioritariosCount;
                 firstLoad = false;
 
             } catch (e) {
