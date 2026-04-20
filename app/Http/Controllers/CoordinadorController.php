@@ -113,7 +113,7 @@ class CoordinadorController extends Controller
     {
         $request->validate([
             'ase_id'   => 'required|exists:asesor,ase_id',
-            'nuevo_tipo' => 'required|in:V,G',
+            'nuevo_tipo' => 'required|in:V,G,E',
         ]);
 
         $asesor = Asesor::findOrFail($request->ase_id);
@@ -295,7 +295,7 @@ class CoordinadorController extends Controller
             'pers_apellidos' => 'required|string',
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6',
-            'ase_tipo_asesor'=> 'required|in:G,V',
+            'ase_tipo_asesor'=> 'required|in:G,V,E',
             'ase_mesa'       => 'required|integer|min:1|max:20',
         ]);
 

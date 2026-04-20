@@ -137,6 +137,7 @@
                                 <select onchange="cambiarTipo(this, {{ $a->ase_id }})" class="bg-white border border-gray-200 text-[10px] font-bold rounded-lg px-2 py-1 outline-none focus:border-[#10069f]">
                                     <option value="G" {{ $a->ase_tipo_asesor == 'G' ? 'selected' : '' }}>General</option>
                                     <option value="V" {{ $a->ase_tipo_asesor == 'V' ? 'selected' : '' }}>Víctimas</option>
+                                    <option value="E" {{ $a->ase_tipo_asesor == 'E' ? 'selected' : '' }}>Empresario</option>
                                 </select>
                             </div>
                             @if($a->ase_estado === 'ocupado')
@@ -224,6 +225,7 @@
                         <select name="ase_tipo_asesor" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
                             <option value="G">General</option>
                             <option value="V">Víctimas</option>
+                            <option value="E">Empresario</option>
                         </select>
                     </div>
                 </div>
@@ -273,12 +275,18 @@
                 res = await handleFetchResponse(res);
                 if (!res) return;
 
+                if (res.status === 422) {
+                    const data = await res.json();
+                    const msgs = Object.values(data.errors || {}).flat().join('\n');
+                    alert('Error de validación:\n' + (msgs || 'Verifique los datos'));
+                    return;
+                }
                 const data = await res.json();
                 if (data.success) {
                     alert('Asesor registrado correctamente');
                     location.reload();
                 } else {
-                    alert('Error: ' + JSON.stringify(data.errors || 'Verifique los datos'));
+                    alert('Error: ' + (data.message || 'Verifique los datos'));
                 }
             } catch (e) { alert('Error de conexión'); }
         });

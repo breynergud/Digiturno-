@@ -382,8 +382,15 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Error en el servidor');
+                    let msg = 'Error en el servidor';
+                    try {
+                        const ct = response.headers.get('content-type') || '';
+                        if (ct.includes('application/json')) {
+                            const errorData = await response.json();
+                            msg = errorData.message || (errorData.errors ? Object.values(errorData.errors).flat().join('\n') : msg);
+                        }
+                    } catch (_) {}
+                    throw new Error(msg);
                 }
 
                 const data = await response.json();

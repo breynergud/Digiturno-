@@ -238,6 +238,24 @@
                     {{-- Se puebla por JS --}}
                 </div>
             </div>
+
+            {{-- Sección: Turnos EMPRESARIO --}}
+            <div class="glass rounded-2xl p-6 border-b-4 border-blue-500">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <p class="text-blue-400 text-[10px] font-black uppercase tracking-widest">Cola Empresarial</p>
+                        <h3 class="text-white font-extrabold text-lg">Turnos Empresario</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                            <span id="cola-empresario-count">0</span> pendientes
+                        </span>
+                    </div>
+                </div>
+                <div id="lista-cola-empresario" class="space-y-3 max-h-[300px] overflow-y-auto pr-1 min-h-[60px]">
+                    {{-- Se puebla por JS --}}
+                </div>
+            </div>
         </div>
         </div>
     </main>
@@ -663,7 +681,29 @@
                     `).join('');
                 }
 
-                // 3. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
+                // 3. Actualizar COLA EMPRESARIO
+                const listaEmpresario = document.getElementById('lista-cola-empresario');
+                const colaEmpresario = data.cola_empresario || [];
+                document.getElementById('cola-empresario-count').innerText = colaEmpresario.length;
+
+                if (colaEmpresario.length === 0) {
+                    listaEmpresario.innerHTML = `
+                        <div class="text-center py-8 border-2 border-dashed border-white/5 rounded-xl">
+                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos empresariales</p>
+                        </div>`;
+                } else {
+                    listaEmpresario.innerHTML = colaEmpresario.map(t => `
+                        <div class="queue-item glass rounded-xl px-5 py-4 border border-blue-500/20 flex items-center justify-between animate-in slide-in-from-right duration-300">
+                            <div>
+                                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-wider">Empresario</p>
+                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                            </div>
+                            <p class="text-gray-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                        </div>
+                    `).join('');
+                }
+
+                // 4. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
                 const estadoActual = document.getElementById('estado-texto').innerText.trim().toLowerCase();
                 const prioritariosCount = data.cola_prioritaria ? data.cola_prioritaria.length : 0;
 
@@ -837,6 +877,10 @@
         ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
             document.addEventListener(evt, resetIdleTimer, true);
         });
+
+        // ── Polling automático de datos cada 4 segundos ────────────
+        refreshPollData();
+        setInterval(refreshPollData, 4000);
 
         // Revisar inactividad (timestamp-based)
         setInterval(() => {

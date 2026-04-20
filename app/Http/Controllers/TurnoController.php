@@ -34,7 +34,7 @@ class TurnoController extends Controller
                     'pers_tipodoc' => $request->pers_tipodoc,
                     'pers_nombres' => $nombres,
                     'pers_apellidos' => $apellidos,
-                    'pers_telefono' => (int)$request->telefono,
+                    'pers_telefono' => $request->telefono ? (int)$request->telefono : null,
                 ]
             );
 
@@ -149,7 +149,7 @@ class TurnoController extends Controller
                 'tipo_atencion' => $request->tipo_atencion,
                 'tipo_documento' => $request->pers_tipodoc,
                 'numero_documento' => $request->numero_documento,
-                'telefono' => $request->telefono,
+                'telefono' => $request->telefono ?: null,
                 'codigo_turno' => $codigo,
                 'mesa' => $mesaAsignada,
             ]);

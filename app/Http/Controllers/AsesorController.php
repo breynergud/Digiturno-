@@ -95,16 +95,13 @@ class AsesorController extends Controller
         $asesor   = Asesor::findOrFail($asesorId);
         $tipo     = $asesor->ase_tipo_asesor;
         
-        // 1. Obtener mi cola filtrada (Cacheado por 5s para reducir carga de polling múltiple)
-        $cacheKey = "cola_asesor_{$asesorId}";
-        $colaPersonal = Cache::remember($cacheKey, 5, function() use ($tipo, $asesorId) {
-            return $this->getColaParaTipo($tipo, $asesorId);
-        });
+        $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
         
         // 2. Separar por tipo para la interfaz
         $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
         $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Prioritario'));
         $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
+        $colaEmpresario  = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Empresario'));
 
         $historial = $this->getHistorialHoy($asesor);
 
@@ -112,10 +109,11 @@ class AsesorController extends Controller
             'estado'            => $asesor->ase_estado,
             'turno_actual_id'   => $asesor->ase_turno_actual_id,
             'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
-            'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas),
+            'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas) + count($colaEmpresario),
             'cola_prioritaria'  => $colaPrioritaria,
             'cola_general'      => $colaGeneral,
             'cola_victimas'     => $colaVictimas,
+            'cola_empresario'   => $colaEmpresario,
             'historial'         => $historial,
         ]);
     }
@@ -323,6 +321,7 @@ class AsesorController extends Controller
         return match($tipoLetra) {
             'V' => 'Victimas',
             'P' => 'Prioritario',
+            'E' => 'Empresario',
             default => 'General',
         };
     }
@@ -334,13 +333,28 @@ class AsesorController extends Controller
         if (!$asesor) return [];
 
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
-        
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
-        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->whereIn('tur_tipo', $tiposPermitidos)
-            ->where('tur_mesa', $asesor->ase_mesa) // <-- Filtro por MESA
-            ->whereDate('tur_hora_fecha', today())
-            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
+        $hoy = today();
+
+        // Empresario: cola global sin filtro de mesa
+        if ($tipo === 'E') {
+            return TurnoUnificado::whereNotIn('tur_id', $atendidos)
+                ->where('tur_tipo', 'Empresario')
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->orderBy('tur_id')
+                ->get()
+                ->map(fn($t) => [
+                    'id'     => $t->tur_id,
+                    'codigo' => $t->tur_numero,
+                    'hora'   => $t->tur_hora_fecha,
+                    'tipo'   => $t->tur_tipo,
+                ])->toArray();
+        }
+
+        // Prioritarios/Víctimas: siempre globales
+        $prioritarios = TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->whereIn('tur_tipo', array_intersect($tiposPermitidos, ['Victimas', 'Prioritario']))
+            ->whereDate('tur_hora_fecha', $hoy)
             ->orderBy('tur_id')
             ->get()
             ->map(fn($t) => [
@@ -349,6 +363,47 @@ class AsesorController extends Controller
                 'hora'   => $t->tur_hora_fecha,
                 'tipo'   => $t->tur_tipo,
             ])->toArray();
+
+        // Generales: primero los de mi mesa, si no hay, fallback global
+        $generales = TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->where('tur_tipo', 'General')
+            ->where('tur_mesa', $asesor->ase_mesa)
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->orderBy('tur_id')
+            ->get();
+
+        if ($generales->isEmpty()) {
+            $generales = TurnoUnificado::whereNotIn('tur_id', $atendidos)
+                ->where('tur_tipo', 'General')
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->orderBy('tur_id')
+                ->get();
+        }
+
+        $generalesArr = $generales->map(fn($t) => [
+            'id'     => $t->tur_id,
+            'codigo' => $t->tur_numero,
+            'hora'   => $t->tur_hora_fecha,
+            'tipo'   => $t->tur_tipo,
+        ])->toArray();
+
+        // Empresarios: globales si el tipo G los incluye
+        $empresariosArr = [];
+        if (in_array('Empresario', $tiposPermitidos)) {
+            $empresariosArr = TurnoUnificado::whereNotIn('tur_id', $atendidos)
+                ->where('tur_tipo', 'Empresario')
+                ->whereDate('tur_hora_fecha', $hoy)
+                ->orderBy('tur_id')
+                ->get()
+                ->map(fn($t) => [
+                    'id'     => $t->tur_id,
+                    'codigo' => $t->tur_numero,
+                    'hora'   => $t->tur_hora_fecha,
+                    'tipo'   => $t->tur_tipo,
+                ])->toArray();
+        }
+
+        return array_merge($prioritarios, $generalesArr, $empresariosArr);
     }
 
     private function getSiguienteTurno(string $tipoAsesor, Asesor $asesor)
@@ -397,7 +452,8 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V' => ['Victimas'],
-            'G' => ['Prioritario', 'General'],
+            'G' => ['Prioritario', 'General', 'Empresario'],
+            'E' => ['Empresario'],
             'GO'=> ['General'],
             default => ['General'],
         };
