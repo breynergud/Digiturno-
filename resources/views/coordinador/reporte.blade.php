@@ -37,7 +37,24 @@
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resumen de atenciones APE</p>
                 </div>
             </div>
-            <button onclick="window.print()" class="bg-[#0a0455] text-white text-[10px] font-black uppercase tracking-widest px-6 py-4 rounded-xl hover:bg-[#10069f] transition-all shadow-lg border-b-4 border-black">Imprimir Reporte</button>
+            
+            <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <form action="{{ route('coordinador.reporte') }}" method="GET" class="flex items-center space-x-2">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o mesa..." class="bg-white border border-gray-200 text-gray-700 text-[10px] font-bold rounded-lg focus:ring-[#10069f] focus:border-[#10069f] block w-48 p-3 shadow-sm uppercase tracking-wider" onkeypress="if(event.keyCode==13){this.form.submit();}">
+                    
+                    <select name="asesor_id" onchange="this.form.submit()" class="bg-white border border-gray-200 text-gray-700 text-[10px] font-bold rounded-lg focus:ring-[#10069f] focus:border-[#10069f] block w-full p-3 shadow-sm uppercase tracking-wider">
+                        <option value="">TODOS LOS ASESORES</option>
+                        @isset($asesoresDropdown)
+                            @foreach($asesoresDropdown as $aDrop)
+                                <option value="{{ $aDrop->ase_id }}" {{ (isset($asesor_id_filter) && $asesor_id_filter == $aDrop->ase_id) ? 'selected' : '' }}>
+                                    {{ $aDrop->persona->pers_nombres }} {{ $aDrop->persona->pers_apellidos }} - Mesa {{ $aDrop->ase_mesa }}
+                                </option>
+                            @endforeach
+                        @endisset
+                    </select>
+                </form>
+                <button onclick="window.print()" class="bg-[#0a0455] text-white text-[10px] font-black uppercase tracking-widest px-6 py-4 rounded-xl hover:bg-[#10069f] transition-all shadow-lg border-b-4 border-black">Imprimir Reporte</button>
+            </div>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative">
@@ -56,6 +73,10 @@
                             <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Vie</th>
                             <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Sáb</th>
                             <th class="px-8 py-8 text-[10px] font-black text-black uppercase tracking-widest text-right">Total</th>
+                            <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center" title="Tiempo promedio que el usuario esperó en la fila">Prom. Espera</th>
+                            <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center" title="Tiempo promedio que el asesor tardó en atender">Prom. Aten.</th>
+                            <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center" title="Suma total de todo el tiempo esperado por los usuarios">Total Espera</th>
+                            <th class="px-4 py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center" title="Suma total de todo el tiempo de atención del asesor">Total Aten.</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -63,8 +84,11 @@
                         <tr class="hover:bg-gray-50/30 transition-colors">
                             <td class="px-8 py-7">
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-400 text-xs shadow-inner">{{ substr($reg['asesor'], 0, 1) }}</div>
-                                    <span class="text-sm font-black text-black">{{ $reg['asesor'] }}</span>
+                                    <div class="min-w-[2.25rem] w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-400 text-xs shadow-inner">{{ substr($reg['asesor'], 0, 1) }}</div>
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-black text-black">{{ $reg['asesor'] }}</span>
+                                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Mesa {{ $reg['mesa'] }}</span>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-8 py-7">
@@ -81,6 +105,10 @@
                             <td class="px-8 py-7 text-right">
                                 <span class="bg-[#ffb500] text-[#0a0455] px-3 py-1 rounded-lg text-lg font-black shadow-sm">{{ $reg['total'] }}</span>
                             </td>
+                            <td class="px-4 py-7 text-xs font-bold text-gray-500 text-center">{{ $reg['promedio_espera'] }}</td>
+                            <td class="px-4 py-7 text-xs font-bold text-pink-600 text-center" style="color: #10069f;">{{ $reg['promedio_atencion'] }}</td>
+                            <td class="px-4 py-7 text-xs font-bold text-gray-400 text-center">{{ $reg['total_espera'] }}</td>
+                            <td class="px-4 py-7 text-xs font-bold text-gray-400 text-center">{{ $reg['total_atencion'] }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -96,6 +124,54 @@
             </div>
             @endif
         </div>
+
+        @if(isset($asesor_id_filter) && $asesor_id_filter && isset($atencionesDetalle) && count($atencionesDetalle) > 0)
+        <div class="mt-12 bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-[#ffb500]"></div>
+            <div class="p-8 border-b border-gray-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-black text-black uppercase tracking-tight">Detalle <span class="text-[#10069f]">de Atenciones</span></h2>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Historial completo del asesor seleccionado</p>
+                </div>
+                <span class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-black">{{ count($atencionesDetalle) }} Atenciones</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tipo</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha y Hora (Inicio)</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Espera del Usuario</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tiempo Asesor</th>
+                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($atencionesDetalle as $det)
+                        <tr class="hover:bg-gray-50/30 transition-colors">
+                            <td class="px-8 py-5 text-sm font-black text-black">{{ $det['turno'] }}</td>
+                            <td class="px-4 py-5">
+                                <span class="bg-blue-50 text-[#10069f] text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-tighter">
+                                    {{ $det['tipo'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-5 text-xs font-bold text-gray-600">{{ $det['inicio'] }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-gray-500 text-center">{{ $det['espera'] }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-pink-600 text-center" style="color: #10069f;">{{ $det['atencion'] }}</td>
+                            <td class="px-8 py-5 text-xs font-bold {{ $det['estado'] == 'atendido' ? 'text-green-500' : 'text-red-500' }} uppercase text-right">{{ $det['estado'] }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @elseif(isset($asesor_id_filter) && $asesor_id_filter && isset($atencionesDetalle) && count($atencionesDetalle) == 0)
+            <div class="mt-8 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-12 text-center">
+                 <p class="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">El asesor seleccionado no tiene atenciones registradas en esta semana</p>
+            </div>
+        @endif
 
         <p class="text-center text-gray-400 text-[9px] font-black uppercase tracking-[0.5em] mt-12 pb-12">
             Sistema de Gestión Institucional — APE Digiturno

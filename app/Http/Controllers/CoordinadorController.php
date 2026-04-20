@@ -164,19 +164,55 @@ class CoordinadorController extends Controller
     //  REPORTE SEMANAL
     // ─────────────────────────────────────────────────────────────
 
-    public function reporteSemanal()
+    public function reporteSemanal(Request $request)
     {
         $startOfWeek = now()->startOfWeek();
         $endOfWeek   = now()->endOfWeek();
 
-        $reporte = Asesor::with(['persona'])
+        $asesor_id_filter = $request->input('asesor_id');
+        $search = $request->input('search');
+        
+        $asesoresDropdown = Asesor::with('persona')->get();
+
+        $formatTime = function($seconds) {
+            if ($seconds <= 0) return '0s';
+            $seconds = round($seconds);
+            $hours = floor($seconds / 3600);
+            $minutes = floor(($seconds % 3600) / 60);
+            $sec = $seconds % 60;
+            
+            $res = [];
+            if ($hours > 0) $res[] = $hours . 'h';
+            if ($minutes > 0) $res[] = $minutes . 'm';
+            if ($sec > 0 || count($res) == 0) $res[] = $sec . 's';
+            
+            return implode(' ', $res);
+        };
+
+        $query = Asesor::with(['persona']);
+        if ($asesor_id_filter) {
+            $query->where('ase_id', $asesor_id_filter);
+        }
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('persona', function($subQ) use ($search) {
+                    $subQ->where('pers_nombres', 'LIKE', "%{$search}%")
+                         ->orWhere('pers_apellidos', 'LIKE', "%{$search}%");
+                })->orWhere('ase_mesa', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $reporte = $query
             ->get()
-            ->map(function($asesor) use ($startOfWeek, $endOfWeek) {
-                $atenciones = Atencion::where('ASESOR_ase_id', $asesor->ase_id)
+            ->map(function($asesor) use ($startOfWeek, $endOfWeek, $formatTime) {
+                $atencionesQuery = Atencion::with('turno')
+                    ->where('ASESOR_ase_id', $asesor->ase_id)
                     ->whereBetween('atnc_hora_inicio', [$startOfWeek, $endOfWeek])
                     ->whereNotNull('atnc_hora_fin')
-                    ->get()
-                    ->groupBy(function($date) {
+                    ->get();
+                    
+                $atenciones = $atencionesQuery->groupBy(function($date) {
                         return Carbon::parse($date->atnc_hora_inicio)->format('l'); // Nombre del día
                     });
 
@@ -186,15 +222,68 @@ class CoordinadorController extends Controller
                     $counts[$dia] = isset($atenciones[$dia]) ? count($atenciones[$dia]) : 0;
                 }
 
+                // Cálculos de tiempos
+                $total_espera_segundos = 0;
+                $total_atencion_segundos = 0;
+                $cantidad = count($atencionesQuery);
+
+                foreach ($atencionesQuery as $atnc) {
+                    if ($atnc->turno && $atnc->turno->tur_hora_fecha && $atnc->atnc_hora_inicio) {
+                        $espera = Carbon::parse($atnc->turno->tur_hora_fecha)->diffInSeconds(Carbon::parse($atnc->atnc_hora_inicio));
+                        $total_espera_segundos += max(0, $espera);
+                    }
+                    
+                    if ($atnc->atnc_hora_inicio && $atnc->atnc_hora_fin) {
+                        $atencion_tiempo = Carbon::parse($atnc->atnc_hora_inicio)->diffInSeconds(Carbon::parse($atnc->atnc_hora_fin));
+                        $total_atencion_segundos += max(0, $atencion_tiempo);
+                    }
+                }
+
+                $promedio_espera_segundos = $cantidad > 0 ? $total_espera_segundos / $cantidad : 0;
+                $promedio_atencion_segundos = $cantidad > 0 ? $total_atencion_segundos / $cantidad : 0;
+
                 return [
-                    'asesor' => $asesor->persona->pers_nombres . ' ' . $asesor->persona->pers_apellidos,
-                    'tipo'   => $asesor->ase_tipo_asesor,
-                    'atenciones' => $counts,
-                    'total' => array_sum($counts)
+                    'asesor'            => $asesor->persona->pers_nombres . ' ' . $asesor->persona->pers_apellidos,
+                    'mesa'              => $asesor->ase_mesa,
+                    'tipo'              => $asesor->ase_tipo_asesor,
+                    'atenciones'        => $counts,
+                    'total'             => array_sum($counts),
+                    'promedio_espera'   => $formatTime($promedio_espera_segundos),
+                    'promedio_atencion' => $formatTime($promedio_atencion_segundos),
+                    'total_espera'      => $formatTime($total_espera_segundos),
+                    'total_atencion'    => $formatTime($total_atencion_segundos),
                 ];
             });
 
-        return view('coordinador.reporte', compact('reporte'));
+        $atencionesDetalle = [];
+        if ($asesor_id_filter) {
+            $atencionesDetalle = Atencion::with('turno')
+                ->where('ASESOR_ase_id', $asesor_id_filter)
+                ->whereBetween('atnc_hora_inicio', [$startOfWeek, $endOfWeek])
+                ->whereNotNull('atnc_hora_fin')
+                ->orderBy('atnc_hora_inicio', 'desc')
+                ->get()
+                ->map(function($atnc) use ($formatTime) {
+                    $espera = 0;
+                    $atencion_tiempo = 0;
+                    if ($atnc->turno && $atnc->turno->tur_hora_fecha && $atnc->atnc_hora_inicio) {
+                        $espera = max(0, Carbon::parse($atnc->turno->tur_hora_fecha)->diffInSeconds(Carbon::parse($atnc->atnc_hora_inicio)));
+                    }
+                    if ($atnc->atnc_hora_inicio && $atnc->atnc_hora_fin) {
+                        $atencion_tiempo = max(0, Carbon::parse($atnc->atnc_hora_inicio)->diffInSeconds(Carbon::parse($atnc->atnc_hora_fin)));
+                    }
+                    return [
+                        'turno' => $atnc->turno ? $atnc->turno->tur_numero : '-',
+                        'tipo' => $atnc->atnc_tipo,
+                        'inicio' => Carbon::parse($atnc->atnc_hora_inicio)->format('d/m/Y h:i A'),
+                        'espera' => $formatTime($espera),
+                        'atencion' => $formatTime($atencion_tiempo),
+                        'estado' => $atnc->atnc_estado
+                    ];
+                });
+        }
+
+        return view('coordinador.reporte', compact('reporte', 'asesoresDropdown', 'asesor_id_filter', 'atencionesDetalle'));
     }
 
     public function storeAsesor(Request $request)
