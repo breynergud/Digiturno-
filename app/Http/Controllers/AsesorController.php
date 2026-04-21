@@ -157,29 +157,52 @@ class AsesorController extends Controller
             return response()->json(['error' => 'no_session'], 401);
         }
 
-        $request->validate([
-            'pers_doc'       => 'required',
-            'pers_tipodoc'   => 'required|string|max:45',
-            'pers_nombres'   => 'required|string|max:100',
-            'pers_apellidos' => 'required|string|max:100',
-            'pers_telefono'  => 'nullable|string|max:20',
-            'pers_fecha_nac' => 'nullable|date',
-        ]);
+        try {
+            $request->validate([
+                'pers_doc'       => 'required',
+                'pers_tipodoc'   => 'required|string|max:45',
+                'pers_nombres'   => 'required|string|max:100',
+                'pers_apellidos' => 'required|string|max:100',
+                'pers_telefono'  => 'nullable|string|max:20',
+                'pers_fecha_nac' => 'nullable',
+            ]);
 
-        $persona = Persona::find($request->pers_doc);
-        if (! $persona) {
-            return response()->json(['error' => 'Persona no encontrada'], 404);
+            $persona = Persona::find($request->pers_doc);
+            if (! $persona) {
+                return response()->json(['error' => 'Persona no encontrada'], 404);
+            }
+
+            // Limpiar teléfono (solo dígitos para bigint)
+            $telefono = $request->pers_telefono
+                ? preg_replace('/\D/', '', $request->pers_telefono)
+                : null;
+
+            // Normalizar fecha (acepta yyyy-mm-dd o vacío)
+            $fecha = null;
+            if ($request->pers_fecha_nac) {
+                try {
+                    $fecha = \Carbon\Carbon::parse($request->pers_fecha_nac)->format('Y-m-d H:i:s');
+                } catch (\Exception $e) {
+                    $fecha = null;
+                }
+            }
+
+            $persona->update([
+                'pers_tipodoc'   => $request->pers_tipodoc,
+                'pers_nombres'   => $request->pers_nombres,
+                'pers_apellidos' => $request->pers_apellidos,
+                'pers_telefono'  => $telefono ?: null,
+                'pers_fecha_nac' => $fecha,
+            ]);
+
+            return response()->json(['success' => true, 'persona' => $persona->fresh()]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('updatePersona error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $persona->update([
-            'pers_tipodoc'   => $request->pers_tipodoc,
-            'pers_nombres'   => $request->pers_nombres,
-            'pers_apellidos' => $request->pers_apellidos,
-            'pers_telefono'  => $request->pers_telefono,
-            'pers_fecha_nac' => $request->pers_fecha_nac,
-        ]);
-
-        return response()->json(['success' => true, 'persona' => $persona]);
     }
 
     // ─────────────────────────────────────────────────────────────

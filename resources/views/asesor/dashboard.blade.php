@@ -815,11 +815,19 @@
                 res = await handleFetchResponse(res);
                 if (!res) return;
 
-                const result = await res.json();
+                let result;
+                try {
+                    result = await res.json();
+                } catch (_) {
+                    // Respuesta no es JSON (probablemente HTML de redirección)
+                    location.reload();
+                    return;
+                }
 
                 if (!res.ok) {
                     const errEl = document.getElementById('modal-error');
-                    errEl.innerText = result.error || Object.values(result.errors || {}).flat().join(', ');
+                    const msg = result.error || Object.values(result.errors || {}).flat().join(', ') || 'Error al guardar';
+                    errEl.innerText = msg;
                     errEl.classList.remove('hidden');
                     return;
                 }
@@ -836,8 +844,9 @@
                 }, 1500);
 
             } catch (e) {
-                document.getElementById('modal-error').innerText = 'Error de conexión.';
-                document.getElementById('modal-error').classList.remove('hidden');
+                const errEl = document.getElementById('modal-error');
+                errEl.innerText = 'Error de conexión: ' + e.message;
+                errEl.classList.remove('hidden');
             }
         }
 
