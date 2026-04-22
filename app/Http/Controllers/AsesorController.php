@@ -152,6 +152,7 @@ class AsesorController extends Controller
 
     public function updatePersona(Request $request)
     {
+        \Log::info('updatePersona called', ['asesor_id' => session('asesor_id'), 'data' => $request->all()]);
         $asesorId = session('asesor_id');
         if (! $asesorId) {
             return response()->json(['error' => 'no_session'], 401);
@@ -200,7 +201,7 @@ class AsesorController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('updatePersona error: ' . $e->getMessage());
+            \Log::error('updatePersona error: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -227,13 +228,12 @@ class AsesorController extends Controller
             $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
             $turno = null;
 
-            // Si se envió un ID específico (desde la lista de prioritarios o víctimas)
+            // Si se envió un ID específico (desde la lista de prioritarios, víctimas o empresario)
             if ($request->has('tur_id')) {
                 $turno = TurnoUnificado::where('tur_id', $request->tur_id)
-                    ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id')) // No atendido
+                    ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id'))
                     ->whereIn('tur_tipo', $tiposPermitidos)
-                    ->where('tur_mesa', $asesor->ase_mesa) // Estricto a mi mesa
-                    ->first();
+                    ->first(); // Sin filtro de mesa — el asesor eligió este turno explícitamente
             }
 
             // Fallback por prioridad automática (Siguiente en mi mesa o Desbordamiento)
@@ -284,7 +284,7 @@ class AsesorController extends Controller
         });
     }
 
-    public function finalizaratencion(Request $request)
+    public function finalizarAtencion(Request $request)
     {
         $asesorId = session('asesor_id');
         if (! $asesorId) {
@@ -475,7 +475,7 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V' => ['Victimas'],
-            'G' => ['Prioritario', 'General', 'Empresario'],
+            'G' => ['Victimas', 'Prioritario', 'General', 'Empresario'],
             'E' => ['Empresario'],
             'GO'=> ['General'],
             default => ['General'],

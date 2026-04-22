@@ -27,6 +27,9 @@ class InactividadAsesor
                 } else {
                     // Al expirar, redirigimos a una página especial de "Sesión Finalizada"
                     session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
+                    if ($request->ajax() || $request->wantsJson() || $request->hasHeader('X-Requested-With')) {
+                        return response()->json(['error' => 'session_expired'], 401);
+                    }
                     return redirect()->route('asesor.finalizada');
                 }
             }

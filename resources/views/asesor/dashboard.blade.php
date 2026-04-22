@@ -220,6 +220,25 @@
                 </div>
             </div>
 
+            {{-- Sección: Turnos VÍCTIMAS --}}
+            <div class="glass rounded-2xl p-6 border-b-4 border-red-600">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <p class="text-red-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                            Atención Prioritaria
+                        </p>
+                        <h3 class="text-white font-extrabold text-lg">Turnos Víctimas</h3>
+                    </div>
+                    <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                        <span id="cola-victimas-count">0</span> pendientes
+                    </span>
+                </div>
+                <div id="lista-cola-victimas" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[60px]">
+                    {{-- Se puebla por JS --}}
+                </div>
+            </div>
+
             {{-- Sección: Turnos GENERALES --}}
             <div class="glass rounded-2xl p-6 flex-1 border-b-4 border-gray-700">
                 <div class="flex items-center justify-between mb-5">
@@ -398,6 +417,10 @@
             if (res.redirected || res.status === 419) {
                 console.warn('Sesión expirada o error 419. Recargando...');
                 location.reload();
+                return null;
+            }
+            if (res.status === 401) {
+                location.href = '{{ route("asesor.login") }}';
                 return null;
             }
             return res;
@@ -660,7 +683,32 @@
                         </div>`;
                 }
 
-                // 2. Actualizar COLA GENERAL (Asignada a mí)
+                // 2. Actualizar COLA VÍCTIMAS
+                const listaVictimas = document.getElementById('lista-cola-victimas');
+                const colaVictimas = data.cola_victimas || [];
+                document.getElementById('cola-victimas-count').innerText = colaVictimas.length;
+
+                if (colaVictimas.length === 0) {
+                    listaVictimas.innerHTML = `
+                        <div class="col-span-full py-8 text-center border-2 border-dashed border-white/5 rounded-xl">
+                            <p class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
+                        </div>`;
+                } else {
+                    listaVictimas.innerHTML = colaVictimas.map(t => `
+                        <div class="flex items-center justify-between bg-red-900/20 border border-red-500/30 p-4 rounded-xl shadow-inner animate-in fade-in zoom-in duration-300">
+                            <div>
+                                <p class="text-red-400 text-[10px] font-black uppercase tracking-widest">Víctimas</p>
+                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                            </div>
+                            <button onclick="aceptarTurnoEspecifico(${t.id})"
+                                class="bg-red-600 text-white font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-red-800">
+                                ATENDER
+                            </button>
+                        </div>
+                    `).join('');
+                }
+
+                // 3. Actualizar COLA GENERAL (Asignada a mí)
                 const listaCola = document.getElementById('lista-cola');
                 document.getElementById('cola-count').innerText = data.cola_general.length;
 
@@ -681,7 +729,7 @@
                     `).join('');
                 }
 
-                // 3. Actualizar COLA EMPRESARIO
+                // 4. Actualizar COLA EMPRESARIO
                 const listaEmpresario = document.getElementById('lista-cola-empresario');
                 const colaEmpresario = data.cola_empresario || [];
                 document.getElementById('cola-empresario-count').innerText = colaEmpresario.length;
@@ -703,7 +751,7 @@
                     `).join('');
                 }
 
-                // 4. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
+                // 5. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
                 const estadoActual = document.getElementById('estado-texto').innerText.trim().toLowerCase();
                 const prioritariosCount = data.cola_prioritaria ? data.cola_prioritaria.length : 0;
 
@@ -793,12 +841,15 @@
             document.getElementById('modal-error').classList.add('hidden');
             document.getElementById('modal-success').classList.add('hidden');
 
-            const form = document.getElementById('forma-persona');
-            const data = new FormData(form);
-            const body = {};
-            data.forEach((v, k) => body[k] = v);
-            // Agregar método PUT ya que fetch usa JSON
-            body['_method'] = 'PUT';
+            // Leer valores directamente de los inputs
+            const body = {
+                pers_doc:       document.getElementById('f-pers-doc').value,
+                pers_tipodoc:   document.getElementById('f-tipodoc').value,
+                pers_nombres:   document.getElementById('f-nombres').value,
+                pers_apellidos: document.getElementById('f-apellidos').value,
+                pers_telefono:  document.getElementById('f-telefono').value,
+                pers_fecha_nac: document.getElementById('f-fecha-nac').value,
+            };
 
             try {
                 let res = await fetch('{{ route("asesor.persona.update") }}', {
