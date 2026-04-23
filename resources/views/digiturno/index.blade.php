@@ -130,7 +130,8 @@
 
                 <!-- Empresario -->
                 <button type="button" onclick="selectType('empresario', 'Empresario')" class="ape-card group p-10 rounded-3xl text-center flex flex-col items-center border-b-4 border-b-ape-blue">
-                    <h3 class="text-xl font-black text-ape-blue uppercase tracking-tight">Empresario</h3>
+                    <h3 class="text-xl font-black text-ape-blue uppercase tracking-tight mb-1">Empresario</h3>
+                    <p class="text-ape-gray text-xs font-semibold uppercase tracking-wider">Atención Empresarial</p>
                 </button>
             </div>
         </div>
