@@ -16,7 +16,7 @@
                         ape: {
                             blue: '#10069f',
                             yellow: '#ffb500',
-                            orange: '#ff671f',
+                            orange: '#ff6b00',
                             dark: '#0a0455',
                             gray: '#707070',
                             light: '#f4f4f4'
