@@ -26,6 +26,53 @@ class CoordinadorController extends Controller
         return view('coordinador.login');
     }
 
+    public function showRegister()
+    {
+        if (session('coor_id')) {
+            return redirect()->route('coordinador.dashboard');
+        }
+        return view('coordinador.register');
+    }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_tipodoc'   => 'required|string',
+            'pers_nombres'   => 'required|string',
+            'pers_apellidos' => 'required|string',
+            'coor_correo'    => 'required|email|unique:coordinador,coor_correo',
+            'coor_password'  => 'required|string|min:6|confirmed',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            // 1. Crear Persona
+            Persona::create([
+                'pers_doc'       => $request->pers_doc,
+                'pers_tipodoc'   => $request->pers_tipodoc,
+                'pers_nombres'   => $request->pers_nombres,
+                'pers_apellidos' => $request->pers_apellidos,
+                'pers_fecha_nac' => now(),
+            ]);
+
+            // 2. Crear Coordinador
+            $coor = Coordinador::create([
+                'coor_correo'      => $request->coor_correo,
+                'coor_password'    => Hash::make($request->coor_password),
+                'PERSONA_pers_doc' => $request->pers_doc,
+                'coor_estado'      => 'disponible',
+                'coor_vigencia'    => 1,
+            ]);
+
+            session([
+                'coor_id' => $coor->coor_id,
+                'coor_ultima_actividad' => time(),
+            ]);
+
+            return redirect()->route('coordinador.dashboard');
+        });
+    }
+
     public function login(Request $request)
     {
         $request->validate([

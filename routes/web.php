@@ -15,6 +15,8 @@ Route::get('/pantalla', [TurnoController::class, 'tv'])->name('turnos.tv');
 // ── Rutas del Asesor ──────────────────────────────────────────────────────
 Route::get('/asesor/login',      [AsesorController::class, 'showLogin'])->name('asesor.login');
 Route::post('/asesor/login',     [AsesorController::class, 'login'])->name('asesor.login.post');
+Route::get('/asesor/register',   [AsesorController::class, 'showRegister'])->name('asesor.register');
+Route::post('/asesor/register',  [AsesorController::class, 'register'])->name('asesor.register.post');
 Route::get('/asesor/finalizada', [AsesorController::class, 'sesionFinalizada'])->name('asesor.finalizada');
 
 Route::prefix('asesor')->middleware(['asesor.inactividad'])->group(function () {
@@ -33,6 +35,8 @@ Route::get('/coordinador/finalizada', [CoordinadorController::class, 'sesionFina
 Route::prefix('coordinador')->middleware(['coordinador.inactividad'])->group(function () {
     Route::get('/login',             [CoordinadorController::class, 'showLogin'])->name('coordinador.login')->withoutMiddleware(['coordinador.inactividad']);
     Route::post('/login',            [CoordinadorController::class, 'login'])->name('coordinador.login.post')->withoutMiddleware(['coordinador.inactividad']);
+    Route::get('/register',          [CoordinadorController::class, 'showRegister'])->name('coordinador.register')->withoutMiddleware(['coordinador.inactividad']);
+    Route::post('/register',         [CoordinadorController::class, 'register'])->name('coordinador.register.post')->withoutMiddleware(['coordinador.inactividad']);
     Route::post('/logout',           [CoordinadorController::class, 'logout'])->name('coordinador.logout');
     Route::get('/dashboard',         [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
     Route::get('/api/estado',        [CoordinadorController::class, 'apiEstado'])->name('coordinador.api.estado');

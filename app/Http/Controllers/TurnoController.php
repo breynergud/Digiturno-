@@ -24,19 +24,24 @@ class TurnoController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            // 1. Registrar o actualizar la Persona
-            $nombres = $request->input('pers_nombres', '');
-            $apellidos = $request->input('pers_apellidos', '');
-            
-            $persona = Persona::updateOrCreate(
+            // 1. Registrar o recuperar la Persona (Solo con documento y tipo)
+            $persona = Persona::firstOrCreate(
                 ['pers_doc' => (int)$request->numero_documento],
                 [
                     'pers_tipodoc' => $request->pers_tipodoc,
-                    'pers_nombres' => $nombres,
-                    'pers_apellidos' => $apellidos,
+                    'pers_nombres' => $request->input('pers_nombres', ''),
+                    'pers_apellidos' => $request->input('pers_apellidos', ''),
                     'pers_telefono' => $request->telefono ? (int)$request->telefono : null,
                 ]
             );
+
+            // Si la persona ya existe, podríamos actualizar solo el tipo de doc o teléfono si se proveen
+            if (!$persona->wasRecentlyCreated) {
+                $persona->update([
+                    'pers_tipodoc' => $request->pers_tipodoc,
+                    'pers_telefono' => $request->telefono ? (int)$request->telefono : $persona->pers_telefono,
+                ]);
+            }
 
             // 2. Registrar o buscar el Usuario
             $usuario = Usuario::firstOrCreate(

@@ -26,6 +26,59 @@ class AsesorController extends Controller
         return view('asesor.login');
     }
 
+    public function showRegister()
+    {
+        if (session('asesor_id')) {
+            return redirect()->route('asesor.dashboard');
+        }
+        return view('asesor.register');
+    }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_tipodoc'   => 'required|string',
+            'pers_nombres'   => 'required|string',
+            'pers_apellidos' => 'required|string',
+            'ase_correo'     => 'required|email|unique:asesor,ase_correo',
+            'ase_password'   => 'required|string|min:6|confirmed',
+            'ase_tipo_asesor'=> 'required|in:G,V,E',
+            'ase_mesa'       => 'required|integer|min:1|max:20',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            // 1. Crear Persona
+            Persona::create([
+                'pers_doc'       => $request->pers_doc,
+                'pers_tipodoc'   => $request->pers_tipodoc,
+                'pers_nombres'   => $request->pers_nombres,
+                'pers_apellidos' => $request->pers_apellidos,
+                'pers_fecha_nac' => now(),
+            ]);
+
+            // 2. Crear Asesor
+            $asesor = Asesor::create([
+                'ase_nrocontrato'   => 'APE-' . now()->timestamp,
+                'ase_tipo_asesor'   => $request->ase_tipo_asesor,
+                'ase_mesa'          => $request->ase_mesa,
+                'PERSONA_pers_doc' => $request->pers_doc,
+                'ase_correo'        => $request->ase_correo,
+                'ase_password'      => Hash::make($request->ase_password),
+                'ase_estado'        => 'disponible',
+                'ase_vigencia'      => 1,
+            ]);
+
+            session([
+                'asesor_id'   => $asesor->ase_id,
+                'asesor_tipo' => $asesor->ase_tipo_asesor,
+                'asesor_ultima_actividad' => time(),
+            ]);
+
+            return redirect()->route('asesor.dashboard');
+        });
+    }
+
     public function login(Request $request)
     {
         $request->validate([

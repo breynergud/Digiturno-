@@ -448,14 +448,6 @@
             form.submit();
         }
 
-        // Cerrar sesión al cerrar la pestaña/navegador
-        window.addEventListener('unload', function() {
-            const isRefresh = window.performance && window.performance.navigation.type === 1;
-            if (!isRefresh) {
-                const blob = new Blob([JSON.stringify({ _token: CSRF_TOKEN })], { type: 'application/json' });
-                navigator.sendBeacon('{{ route("coordinador.logout") }}', blob);
-            }
-        });
     </script>
 </body>
 </html>

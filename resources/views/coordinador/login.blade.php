@@ -96,6 +96,12 @@
                 >
                     Entrar al Panel
                 </button>
+
+                <div class="mt-6 text-center">
+                    <a href="{{ route('coordinador.register') }}" class="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#ffb500] transition-colors">
+                        ¿No tienes cuenta? Regístrate aquí
+                    </a>
+                </div>
             </form>
         </div>
 

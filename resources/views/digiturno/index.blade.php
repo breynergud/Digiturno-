@@ -73,21 +73,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 relative">
     
-    <!-- Acceso Administrativo (Solo visible en paso 1) -->
-    <div id="admin-buttons" class="absolute top-4 right-4 flex gap-2 z-50">
-        <a href="{{ route('turnos.tv') }}" class="bg-white/90 backdrop-blur-sm border border-gray-200 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl hover:border-ape-blue hover:text-ape-blue transition-all shadow-sm flex items-center group">
-            <svg class="w-3 h-3 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            Televisor
-        </a>
-        <a href="{{ route('asesor.login') }}" class="bg-white/90 backdrop-blur-sm border border-gray-200 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl hover:border-ape-blue hover:text-ape-blue transition-all shadow-sm flex items-center group">
-            <svg class="w-3 h-3 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            Asesor
-        </a>
-        <a href="{{ route('coordinador.login') }}" class="bg-ape-dark text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl hover:bg-ape-blue transition-all shadow-md flex items-center group">
-            <svg class="w-3 h-3 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Administrar
-        </a>
-    </div>
+
 
     <!-- Header Institucional -->
     <div class="mb-12 text-center">
@@ -165,15 +151,6 @@
                         </div>
 
                         <div class="w-full">
-                            <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Teléfono (opcional)</label>
-                            <input type="tel" name="telefono" id="input_tel" 
-                                onclick="setActiveInput('input_tel')"
-                                onfocus="setActiveInput('input_tel')"
-                                placeholder="Opcional para recibir notificaciones" 
-                                class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
-                        </div>
-
-                        <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Tipo Documento</label>
                             <select name="pers_tipodoc" id="pers_tipodoc" required class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
                                 <option value="CC">Cédula CC</option>
@@ -245,20 +222,12 @@
     {{-- Sonido de éxito --}}
     <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
-    <!-- Scripts -->
     <script>
         let focusedInput = 'input_doc';
         
-        // Manejar enfoque táctil simulado
-        document.getElementById('input_doc').addEventListener('focus', () => focusedInput = 'input_doc');
-        document.getElementById('input_tel').addEventListener('focus', () => focusedInput = 'input_tel');
-        
-        // Evitar que el teclado físico nativo se abra (si es teclado táctil puro)
-        // Pero mantendremos el foco para la UI
-        
         function pressKey(num) {
             const input = document.getElementById(focusedInput);
-            if (input.value.length < (focusedInput === 'input_doc' ? 12 : 10)) {
+            if (input.value.length < 12) {
                 input.value += num;
             }
         }

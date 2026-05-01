@@ -27,56 +27,61 @@
         }
     </script>
     <style>
-        body { background-color: #0d0d0d; font-family: 'Montserrat', sans-serif; }
-        .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); }
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Montserrat', sans-serif; 
+            background-image: radial-gradient(#10069f 0.5px, transparent 0.5px);
+            background-size: 32px 32px;
+        }
+        .glass { background: #ffffff; border: 1px solid #eef2f7; box-shadow: 0 10px 25px -5px rgba(16, 6, 159, 0.1); }
         .status-badge { transition: all 0.3s ease; }
         .pulse-blue { animation: pulseb 2s infinite; }
         @keyframes pulseb {
-            0%   { box-shadow: 0 0 0 0 rgba(16,6,159,0.5); }
+            0%   { box-shadow: 0 0 0 0 rgba(16,6,159,0.4); }
             70%  { box-shadow: 0 0 0 14px rgba(16,6,159,0); }
             100% { box-shadow: 0 0 0 0 rgba(16,6,159,0); }
         }
-        .queue-item { transition: all 0.3s ease; }
-        .queue-item:hover { border-color: #10069f; transform: translateX(4px); }
-        .btn-primary   { background: #10069f; transition: all 0.2s; border-bottom: 4px solid #0a0455; }
+        .queue-item { transition: all 0.3s ease; background: #fff; border: 1px solid #f1f5f9; }
+        .queue-item:hover { border-color: #10069f; transform: translateX(4px); box-shadow: 0 4px 12px rgba(16,6,159,0.08); }
+        .btn-primary   { background: #10069f; transition: all 0.2s; border-bottom: 4px solid #0a0455; color: #fff; }
         .btn-primary:hover   { background: #0a0455; transform: translateY(-1px); }
         .btn-primary:active  { transform: scale(0.97); }
-        .btn-secondary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-        .btn-warning   { background: #ffb500; color: #000; transition: all 0.2s; }
+        .btn-secondary { background: #ffffff; border: 1px solid #e2e8f0; transition: all 0.2s; color: #64748b; }
+        .btn-secondary:hover { background: #f1f5f9; color: #10069f; }
+        .btn-logout { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; transition: all 0.2s; }
+        .btn-logout:hover { background: #ef4444; color: #fff; border-color: #dc2626; }
+        .btn-warning   { background: #ffb500; color: #000; transition: all 0.2s; border-bottom: 4px solid #cc9100; }
         .btn-warning:hover   { background: #e6a400; }
-        .btn-danger    { background: #991b1b; transition: all 0.2s; }
+        .btn-danger    { background: #991b1b; transition: all 0.2s; color: #fff; }
         .btn-danger:hover    { background: #7f1d1d; }
-        .btn-info      { background: #10069f; transition: all 0.2s; }
-        .btn-info:hover      { background: #1a1a1a; }
+        .btn-info      { background: #f1f5f9; transition: all 0.2s; color: #10069f; border: 1px solid #e2e8f0; }
+        .btn-info:hover      { background: #e2e8f0; }
     </style>
 </head>
-<body class="min-h-screen text-white">
-
-    {{-- ─── HEADER ──────────────────────────────────────────────── --}}
-    <header class="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+<body class="min-h-screen text-slate-800">
+    <header class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-40">
         <div class="flex items-center gap-4">
-            <div class="px-4 py-1.5 bg-white rounded-xl flex items-center justify-center">
+            <div class="px-4 py-1.5 bg-[#f8fafc] rounded-xl border border-gray-100 flex items-center justify-center">
                 <div class="text-xl font-black tracking-tighter text-[#10069f] flex flex-col items-center">
                     <span class="leading-none">APE</span>
                     <span class="text-[5px] uppercase tracking-[0.2em] font-bold text-[#ffb500]">Agencia Pública de Empleo</span>
                  </div>
             </div>
             <div>
-                <span class="text-white font-black text-lg uppercase tracking-tight">APE <span class="text-[#10069f]">Digiturno</span></span>
-                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wider">Panel del Asesor</p>
+                <span class="text-slate-900 font-black text-lg uppercase tracking-tight">APE <span class="text-[#10069f]">Digiturno</span></span>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Panel del Asesor</p>
             </div>
         </div>
 
         <div class="flex items-center gap-4">
             {{-- Estado actual --}}
-            <div id="estado-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider
-                {{ $asesor->ase_estado === 'disponible' ? 'bg-[#10069f]/20 text-white border border-[#10069f]/30' :
-                   ($asesor->ase_estado === 'en_espera'  ? 'bg-[#ffb500]/20 text-[#ffb500] border border-[#ffb500]/30' :
-                                                           'bg-blue-600/20 text-blue-400 border border-blue-600/30') }}">
-                <span class="w-2 h-2 rounded-full inline-block
-                    {{ $asesor->ase_estado === 'disponible' ? 'bg-[#10069f] pulse-blue' :
-                       ($asesor->ase_estado === 'en_espera'  ? 'bg-[#ffb500]' : 'bg-blue-400') }}"></span>
+            <div id="estado-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2
+                {{ $asesor->ase_estado === 'disponible' ? 'bg-[#10069f] text-white border-[#10069f]' :
+                   ($asesor->ase_estado === 'en_espera'  ? 'bg-[#ffb500] text-[#0a0455] border-[#ffb500]' :
+                                                            'bg-blue-600 text-white border-blue-600') }}">
+                <span class="w-1.5 h-1.5 rounded-full inline-block
+                    {{ $asesor->ase_estado === 'disponible' ? 'bg-white pulse-blue' :
+                       ($asesor->ase_estado === 'en_espera'  ? 'bg-[#0a0455]' : 'bg-white') }}"></span>
                 <span id="estado-texto">
                     {{ $asesor->ase_estado === 'disponible' ? 'Disponible' : ($asesor->ase_estado === 'en_espera' ? 'En Espera' : 'Ocupado') }}
                 </span>
@@ -85,7 +90,7 @@
             {{-- Logout --}}
             <form method="POST" action="{{ route('asesor.logout') }}">
                 @csrf
-                <button type="submit" class="btn-secondary text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl">
+                <button type="submit" class="btn-logout text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl shadow-sm">
                     Cerrar Sesión
                 </button>
             </form>
@@ -99,17 +104,17 @@
         <div class="lg:col-span-1 flex flex-col gap-5">
 
             {{-- Tarjeta: Info del Asesor --}}
-            <div class="glass rounded-2xl p-6">
-                <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">Información del Asesor</p>
+            <div class="glass rounded-[32px] p-6 shadow-sm">
+                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Información del Asesor</p>
                 <div class="flex items-center gap-4 mb-5">
-                    <div class="w-14 h-14 bg-[#10069f]/10 border border-[#10069f]/30 rounded-2xl flex items-center justify-center text-2xl font-black text-[#10069f]">
+                    <div class="w-14 h-14 bg-[#10069f]/5 border border-[#10069f]/10 rounded-2xl flex items-center justify-center text-2xl font-black text-[#10069f]">
                         {{ strtoupper(substr($asesor->persona->pers_nombres ?? 'A', 0, 1)) }}
                     </div>
                     <div>
-                        <h2 class="font-extrabold text-white text-lg leading-tight">
+                        <h2 class="font-extrabold text-slate-900 text-lg leading-tight">
                             {{ $asesor->persona->pers_nombres ?? '—' }} {{ $asesor->persona->pers_apellidos ?? '' }}
                         </h2>
-                        <p class="text-gray-400 text-xs font-semibold">Contrato #{{ $asesor->ase_nrocontrato ?? '—' }}</p>
+                        <p class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Mesa #{{ $asesor->ase_mesa ?? '—' }}</p>
                     </div>
                 </div>
                 <div class="space-y-2 text-sm">
@@ -126,19 +131,19 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500 font-semibold">Correo</span>
-                        <span class="font-semibold text-white text-xs">{{ $asesor->ase_correo }}</span>
+                        <span class="font-semibold text-slate-600 text-xs">{{ $asesor->ase_correo }}</span>
                     </div>
                 </div>
             </div>
 
             {{-- Tarjeta: Turno Actual (atención activa) --}}
-            <div id="card-turno-actual" class="{{ $asesor->ase_estado === 'ocupado' ? '' : 'hidden' }} glass rounded-2xl p-6 border border-blue-500/30">
-                <p class="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-3">Atención Activa</p>
+            <div id="card-turno-actual" class="{{ $asesor->ase_estado === 'ocupado' ? '' : 'hidden' }} glass rounded-[32px] p-6 border-2 border-blue-500/30">
+                <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest mb-3">Atención Activa</p>
                 <div class="text-center py-4">
-                    <div id="turno-codigo-actual" class="text-6xl font-black text-white tracking-tighter mb-2">
+                    <div id="turno-codigo-actual" class="text-6xl font-black text-slate-900 tracking-tighter mb-2">
                         —
                     </div>
-                    <div id="info-persona" class="text-gray-400 text-xs font-semibold"></div>
+                    <div id="info-persona" class="text-slate-500 text-xs font-semibold italic"></div>
                 </div>
                 <div class="flex gap-2 mt-2">
                     <button
@@ -165,8 +170,8 @@
             </div>
 
             {{-- Tarjeta: Acciones Principales --}}
-            <div class="glass rounded-2xl p-6 space-y-3">
-                <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">Acciones</p>
+            <div class="glass rounded-[32px] p-6 space-y-3">
+                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Acciones del Sistema</p>
 
                 {{-- Botón Aceptar Turno --}}
                 <button
@@ -182,7 +187,7 @@
                 <button
                     id="btn-espera"
                     onclick="toggleEspera()"
-                    class="{{ $asesor->ase_estado === 'en_espera' ? 'btn-primary' : 'btn-warning' }} w-full text-white font-extrabold py-3.5 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 mt-3 {{ $asesor->ase_estado === 'ocupado' ? 'opacity-40 cursor-not-allowed' : '' }}"
+                    class="{{ $asesor->ase_estado === 'en_espera' ? 'btn-primary' : 'btn-warning' }} w-full font-extrabold py-3.5 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 mt-3 {{ $asesor->ase_estado === 'ocupado' ? 'opacity-40 cursor-not-allowed' : '' }}"
                     {{ $asesor->ase_estado === 'ocupado' ? 'disabled' : '' }}
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,14 +210,14 @@
         <div class="lg:col-span-2 flex flex-col gap-5">
 
             {{-- Sección: Turnos PRIORITARIOS --}}
-            <div id="card-cola-prioritaria" class="glass rounded-2xl p-6 border-b-4 border-[#ffb500]">
+            <div id="card-cola-prioritaria" class="glass rounded-[32px] p-6 border-b-4 border-[#ffb500]">
                 <div class="flex items-center justify-between mb-5">
                     <div>
                         <p class="text-[#ffb500] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                             <span class="w-1.5 h-1.5 bg-[#ffb500] rounded-full animate-pulse"></span>
-                            Atención Especial / Especiales
+                            Atención Especial / Prioritarios
                         </p>
-                        <h3 class="text-white font-extrabold text-lg">Turnos Prioritarios</h3>
+                        <h3 class="text-slate-900 font-extrabold text-lg">Turnos en Espera</h3>
                     </div>
                 </div>
                 <div id="lista-cola-prioritaria" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[100px]">
@@ -221,16 +226,16 @@
             </div>
 
             {{-- Sección: Turnos VÍCTIMAS --}}
-            <div class="glass rounded-2xl p-6 border-b-4 border-red-600">
+            <div class="glass rounded-[32px] p-6 border-b-4 border-red-600">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <p class="text-red-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                            Atención Prioritaria
+                        <p class="text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"></span>
+                            Población Víctima
                         </p>
-                        <h3 class="text-white font-extrabold text-lg">Turnos Víctimas</h3>
+                        <h3 class="text-slate-900 font-extrabold text-lg">Turnos Víctimas</h3>
                     </div>
-                    <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                    <span class="bg-red-50 text-red-600 text-[10px] font-black px-3 py-1 rounded-full border border-red-100">
                         <span id="cola-victimas-count">0</span> pendientes
                     </span>
                 </div>
@@ -240,14 +245,14 @@
             </div>
 
             {{-- Sección: Turnos GENERALES --}}
-            <div class="glass rounded-2xl p-6 flex-1 border-b-4 border-gray-700">
+            <div class="glass rounded-[32px] p-6 flex-1 border-b-4 border-slate-300">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Cola de Espera</p>
-                        <h3 class="text-white font-extrabold text-lg">Turnos Generales</h3>
+                        <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Cola de Espera</p>
+                        <h3 class="text-slate-900 font-extrabold text-lg">Turnos Generales</h3>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                        <span class="bg-slate-100 text-slate-600 text-[10px] font-black px-3 py-1 rounded-full border border-slate-200">
                             <span id="cola-count">0</span> pendientes
                         </span>
                     </div>
@@ -259,14 +264,14 @@
             </div>
 
             {{-- Sección: Turnos EMPRESARIO --}}
-            <div class="glass rounded-2xl p-6 border-b-4 border-blue-500">
+            <div class="glass rounded-[32px] p-6 border-b-4 border-blue-500">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <p class="text-blue-400 text-[10px] font-black uppercase tracking-widest">Cola Empresarial</p>
-                        <h3 class="text-white font-extrabold text-lg">Turnos Empresario</h3>
+                        <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest">Cola Empresarial</p>
+                        <h3 class="text-slate-900 font-extrabold text-lg">Turnos Empresario</h3>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="glass text-white text-[10px] font-black px-3 py-1 rounded-full">
+                        <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full border border-blue-100">
                             <span id="cola-empresario-count">0</span> pendientes
                         </span>
                     </div>
@@ -280,18 +285,18 @@
     </main>
 
     <!-- ─── MODAL RECORDATORIO TURNO ESPECIAL ────────────────────── -->
-    <div id="modal-prioridad" class="fixed inset-0 z-[100] hidden items-center justify-center bg-[#0a0455]/90 backdrop-blur-md px-4">
-        <div class="bg-[#1a1465] border-2 border-[#ffb500] w-full max-w-md rounded-3xl p-8 shadow-[0_0_50px_rgba(255,181,0,0.3)] animate-in zoom-in duration-300">
+    <div id="modal-prioridad" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-md px-4">
+        <div class="bg-white border-2 border-[#ffb500] w-full max-w-md rounded-[32px] p-8 shadow-2xl animate-in zoom-in duration-300">
             <div class="flex justify-center mb-6 text-[#ffb500]">
                 <div class="bg-[#ffb500]/10 p-5 rounded-full ring-8 ring-[#ffb500]/5">
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
             </div>
-            <h3 class="text-2xl font-black text-white text-center mb-2 uppercase tracking-tighter italic">¡Turno Especial Pendiente!</h3>
-            <p class="text-gray-400 text-center mb-8 px-4 text-sm font-medium leading-relaxed">Hay un ciudadano de atención preferencial asignado a su mesa esperando ser llamado. ¿Desea atenderlo ahora?</p>
+            <h3 class="text-2xl font-black text-slate-900 text-center mb-2 uppercase tracking-tighter">¡Turno Especial Pendiente!</h3>
+            <p class="text-slate-500 text-center mb-8 px-4 text-sm font-medium leading-relaxed">Hay un ciudadano de atención preferencial asignado a su mesa esperando ser llamado. ¿Desea atenderlo ahora?</p>
             
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="cerrarRecordatorio()" class="py-4 rounded-2xl bg-white/5 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-colors">
+                <button onclick="cerrarRecordatorio()" class="py-4 rounded-2xl bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-colors">
                     Ver después
                 </button>
                 <button onclick="aceptarPrioritarioModal()" class="py-4 rounded-2xl bg-[#ffb500] text-[#0a0455] font-black uppercase tracking-widest text-[10px] shadow-lg shadow-yellow-600/20 hover:scale-[1.02] active:scale-95 transition-all">
@@ -302,34 +307,34 @@
     </div>
 
     <!-- ─── MODAL DATOS PERSONA ────────────────────────────── -->
-    <div id="modal-persona" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);">
-        <div class="glass rounded-3xl p-8 w-full max-w-md border border-white/10 shadow-2xl">
+    <div id="modal-persona" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+        <div class="bg-white rounded-[32px] p-8 w-full max-w-md border border-slate-100 shadow-2xl">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest">Datos del Solicitante</p>
-                    <h3 class="text-white font-extrabold text-xl mt-0.5">Información Personal</h3>
+                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Datos del Solicitante</p>
+                    <h3 class="text-slate-900 font-extrabold text-xl mt-0.5">Información Personal</h3>
                 </div>
-                <button onclick="cerrarModal()" class="text-gray-400 hover:text-white transition-colors">
+                <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-900 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
-            <div id="modal-loading" class="text-center py-8 text-gray-400 font-semibold">Cargando...</div>
+            <div id="modal-loading" class="text-center py-8 text-slate-400 font-semibold">Cargando...</div>
 
             <form id="forma-persona" class="space-y-4 hidden" onsubmit="guardarPersona(event)">
                 <input type="hidden" id="f-pers-doc" name="pers_doc">
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Número de Documento</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Número de Documento</label>
                         <input id="f-pers-doc-vis" type="text" disabled
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-gray-400 font-semibold text-sm cursor-not-allowed">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-400 font-semibold text-sm cursor-not-allowed">
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipo Doc.</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo Doc.</label>
                         <select name="pers_tipodoc" id="f-tipodoc" required
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
                             <option value="CC">Cédula CC</option>
                             <option value="TI">Tarjeta TI</option>
                             <option value="CE">Céd. Extranjera</option>
@@ -338,35 +343,35 @@
                     </div>
 
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Fecha de Nacimiento</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Fecha de Nacimiento</label>
                         <input id="f-fecha-nac" name="pers_fecha_nac" type="date"
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
                     </div>
 
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nombres</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nombres</label>
                         <input id="f-nombres" name="pers_nombres" type="text" required placeholder="Nombres completos"
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
                     </div>
 
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Apellidos</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Apellidos</label>
                         <input id="f-apellidos" name="pers_apellidos" type="text" required placeholder="Apellidos completos"
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
                     </div>
 
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Teléfono</label>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Teléfono</label>
                         <input id="f-telefono" name="pers_telefono" type="tel" placeholder="Ej: 310 000 0000"
-                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
                     </div>
                 </div>
 
-                <div id="modal-error" class="hidden bg-red-900/30 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 text-sm font-semibold"></div>
-                <div id="modal-success" class="hidden bg-green-900/30 border border-green-500/30 text-[#ffb500] rounded-xl px-4 py-3 text-sm font-semibold">✓ Datos guardados correctamente</div>
+                <div id="modal-error" class="hidden bg-red-50 border border-red-100 text-red-600 rounded-xl px-4 py-3 text-sm font-semibold"></div>
+                <div id="modal-success" class="hidden bg-green-50 border border-green-100 text-green-600 rounded-xl px-4 py-3 text-sm font-semibold">✓ Datos guardados correctamente</div>
 
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="cerrarModal()" class="btn-secondary flex-1 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-xs">
+                    <button type="button" onclick="cerrarModal()" class="btn-secondary flex-1 font-bold py-3 rounded-xl uppercase tracking-widest text-xs">
                         Cancelar
                     </button>
                     <button type="submit" class="btn-primary flex-1 text-white font-extrabold py-3 rounded-xl uppercase tracking-widest text-xs border-b-4 border-[#0a0455]">
@@ -387,10 +392,10 @@
                     Su Sesión se va a cerrar en un minuto. Cancelar para seguir trabajando o Aceptar para cerrar ahora
                 </p>
                 <div class="flex gap-4">
-                    <button id="btn-timeout-aceptar" onclick="logoutAhora()" class="flex-1 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-[#0a0455]">
+                    <button id="btn-timeout-aceptar" onclick="logoutAhora()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-red-900">
                         ACEPTAR (<span id="timeout-countdown">60</span>)
                     </button>
-                    <button onclick="continuarSesion()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 rounded-xl text-lg uppercase transition-colors border border-gray-200">
+                    <button onclick="continuarSesion()" class="flex-1 bg-gray-50 hover:bg-gray-100 text-slate-900 font-bold py-4 rounded-xl text-lg uppercase transition-colors border border-gray-200">
                         CANCELAR
                     </button>
                 </div>
@@ -468,10 +473,10 @@
             const labels = { disponible: 'Disponible', en_espera: 'En Espera', ocupado: 'Ocupado' };
             textoEl.innerText = labels[estado] || estado;
 
-            badge.className = `flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider ` + (
-                estado === 'disponible' ? 'bg-[#10069f]/20 text-white border border-[#10069f]/30' :
-                estado === 'en_espera'  ? 'bg-[#ffb500]/20 text-[#ffb500] border border-[#ffb500]/30' :
-                                          'bg-blue-600/20 text-blue-400 border border-blue-600/30'
+            badge.className = `flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ` + (
+                estado === 'disponible' ? 'bg-[#10069f] text-white border-[#10069f]' :
+                estado === 'en_espera'  ? 'bg-[#ffb500] text-[#0a0455] border-[#ffb500]' :
+                                          'bg-blue-600 text-white border-blue-600'
             );
 
             // Botón Aceptar
@@ -665,10 +670,10 @@
 
                 if (data.cola_prioritaria && data.cola_prioritaria.length > 0) {
                     listaPrioritaria.innerHTML = data.cola_prioritaria.map(t => `
-                        <div class="flex items-center justify-between bg-white/10 border border-[#ffb500]/30 p-4 rounded-xl shadow-inner animate-in fade-in zoom-in duration-300">
+                        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
                             <div>
-                                <p class="text-[#ffb500] text-[10px] font-black uppercase tracking-widest">Turno Especial</p>
-                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                                <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest">Turno Especial</p>
+                                <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
                             <button onclick="aceptarTurnoEspecifico(${t.id})" 
                                 class="bg-[#ffb500] text-[#0a0455] font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-yellow-700">
@@ -678,8 +683,8 @@
                     `).join('');
                 } else {
                     listaPrioritaria.innerHTML = `
-                        <div class="col-span-full py-8 text-center border-2 border-dashed border-white/5 rounded-xl">
-                            <p class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">Sin turnos prioritarios</p>
+                        <div class="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                            <p class="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Sin turnos prioritarios</p>
                         </div>`;
                 }
 
@@ -690,15 +695,15 @@
 
                 if (colaVictimas.length === 0) {
                     listaVictimas.innerHTML = `
-                        <div class="col-span-full py-8 text-center border-2 border-dashed border-white/5 rounded-xl">
-                            <p class="text-gray-600 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
+                        <div class="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                            <p class="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
                         </div>`;
                 } else {
                     listaVictimas.innerHTML = colaVictimas.map(t => `
-                        <div class="flex items-center justify-between bg-red-900/20 border border-red-500/30 p-4 rounded-xl shadow-inner animate-in fade-in zoom-in duration-300">
+                        <div class="flex items-center justify-between bg-red-50 border border-red-100 p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
                             <div>
-                                <p class="text-red-400 text-[10px] font-black uppercase tracking-widest">Víctimas</p>
-                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                                <p class="text-red-600 text-[10px] font-black uppercase tracking-widest">Víctimas</p>
+                                <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
                             <button onclick="aceptarTurnoEspecifico(${t.id})"
                                 class="bg-red-600 text-white font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-red-800">
@@ -714,17 +719,17 @@
 
                 if (data.cola_general.length === 0) {
                     listaCola.innerHTML = `
-                        <div class="text-center py-12 border-2 border-dashed border-white/5 rounded-xl">
-                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos generales</p>
+                        <div class="text-center py-12 border-2 border-dashed border-slate-100 rounded-[2rem]">
+                            <p class="text-slate-300 font-bold uppercase tracking-widest text-sm">Sin turnos generales</p>
                         </div>`;
                 } else {
                     listaCola.innerHTML = data.cola_general.map(t => `
-                        <div class="queue-item glass rounded-xl px-5 py-4 border border-white/5 flex items-center justify-between animate-in slide-in-from-right duration-300">
+                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 bg-white border border-slate-100 shadow-sm">
                             <div>
-                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">General</p>
-                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">General</p>
+                                <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <p class="text-gray-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                            <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
                         </div>
                     `).join('');
                 }
@@ -736,17 +741,17 @@
 
                 if (colaEmpresario.length === 0) {
                     listaEmpresario.innerHTML = `
-                        <div class="text-center py-8 border-2 border-dashed border-white/5 rounded-xl">
-                            <p class="text-gray-500 font-bold uppercase tracking-widest text-sm">Sin turnos empresariales</p>
+                        <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-[2rem]">
+                            <p class="text-slate-300 font-bold uppercase tracking-widest text-sm">Sin turnos empresariales</p>
                         </div>`;
                 } else {
                     listaEmpresario.innerHTML = colaEmpresario.map(t => `
-                        <div class="queue-item glass rounded-xl px-5 py-4 border border-blue-500/20 flex items-center justify-between animate-in slide-in-from-right duration-300">
+                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 bg-blue-50 border border-blue-100 shadow-sm">
                             <div>
-                                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-wider">Empresario</p>
-                                <p class="text-white font-black text-2xl">${t.codigo}</p>
+                                <p class="text-blue-600 text-[10px] font-bold uppercase tracking-wider">Empresario</p>
+                                <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <p class="text-gray-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                            <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
                         </div>
                     `).join('');
                 }
@@ -1003,14 +1008,6 @@
             form.submit();
         }
 
-        // Cerrar sesión al cerrar la pestaña/navegador
-        window.addEventListener('unload', function() {
-            const isRefresh = window.performance && window.performance.navigation.type === 1;
-            if (!isRefresh) {
-                const blob = new Blob([JSON.stringify({ _token: CSRF })], { type: 'application/json' });
-                navigator.sendBeacon('{{ route("asesor.logout") }}', blob);
-            }
-        });
     </script>
 </body>
 </html>
