@@ -13,10 +13,12 @@ Route::get('/turnos-api/pendientes', [TurnoController::class, 'pendingTurns'])->
 Route::get('/pantalla', [TurnoController::class, 'tv'])->name('turnos.tv');
 
 // ── Rutas del Asesor ──────────────────────────────────────────────────────
-Route::get('/asesor/login',      [AsesorController::class, 'showLogin'])->name('asesor.login');
-Route::post('/asesor/login',     [AsesorController::class, 'login'])->name('asesor.login.post');
-Route::get('/asesor/register',   [AsesorController::class, 'showRegister'])->name('asesor.register');
-Route::post('/asesor/register',  [AsesorController::class, 'register'])->name('asesor.register.post');
+Route::middleware(['digiturno.guest'])->group(function () {
+    Route::get('/asesor/login',      [AsesorController::class, 'showLogin'])->name('asesor.login');
+    Route::post('/asesor/login',     [AsesorController::class, 'login'])->name('asesor.login.post');
+    Route::get('/asesor/register',   [AsesorController::class, 'showRegister'])->name('asesor.register');
+    Route::post('/asesor/register',  [AsesorController::class, 'register'])->name('asesor.register.post');
+});
 Route::get('/asesor/finalizada', [AsesorController::class, 'sesionFinalizada'])->name('asesor.finalizada');
 
 Route::prefix('asesor')->middleware(['asesor.inactividad'])->group(function () {
@@ -32,16 +34,22 @@ Route::prefix('asesor')->middleware(['asesor.inactividad'])->group(function () {
 
 // ── Rutas del Coordinador (Super Admin) ───────────────────────────────────
 Route::get('/coordinador/finalizada', [CoordinadorController::class, 'sesionFinalizada'])->name('coordinador.finalizada');
-Route::prefix('coordinador')->middleware(['coordinador.inactividad'])->group(function () {
-    Route::get('/login',             [CoordinadorController::class, 'showLogin'])->name('coordinador.login')->withoutMiddleware(['coordinador.inactividad']);
-    Route::post('/login',            [CoordinadorController::class, 'login'])->name('coordinador.login.post')->withoutMiddleware(['coordinador.inactividad']);
-    Route::get('/register',          [CoordinadorController::class, 'showRegister'])->name('coordinador.register')->withoutMiddleware(['coordinador.inactividad']);
-    Route::post('/register',         [CoordinadorController::class, 'register'])->name('coordinador.register.post')->withoutMiddleware(['coordinador.inactividad']);
-    Route::post('/logout',           [CoordinadorController::class, 'logout'])->name('coordinador.logout');
-    Route::get('/dashboard',         [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
-    Route::get('/api/estado',        [CoordinadorController::class, 'apiEstado'])->name('coordinador.api.estado');
-    Route::post('/reasignar',        [CoordinadorController::class, 'reasignarAsesor'])->name('coordinador.reasignar');
-    Route::post('/aceptar-turno',    [CoordinadorController::class, 'aceptarTurno'])->name('coordinador.aceptar');
-    Route::get('/reporte',           [CoordinadorController::class, 'reporteSemanal'])->name('coordinador.reporte');
-    Route::post('/asesor/store',     [CoordinadorController::class, 'storeAsesor'])->name('coordinador.asesor.store');
+
+Route::prefix('coordinador')->group(function () {
+    Route::middleware(['digiturno.guest'])->group(function () {
+        Route::get('/login',             [CoordinadorController::class, 'showLogin'])->name('coordinador.login');
+        Route::post('/login',            [CoordinadorController::class, 'login'])->name('coordinador.login.post');
+        Route::get('/register',          [CoordinadorController::class, 'showRegister'])->name('coordinador.register');
+        Route::post('/register',         [CoordinadorController::class, 'register'])->name('coordinador.register.post');
+    });
+
+    Route::middleware(['coordinador.inactividad'])->group(function () {
+        Route::post('/logout',           [CoordinadorController::class, 'logout'])->name('coordinador.logout');
+        Route::get('/dashboard',         [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
+        Route::get('/api/estado',        [CoordinadorController::class, 'apiEstado'])->name('coordinador.api.estado');
+        Route::post('/reasignar',        [CoordinadorController::class, 'reasignarAsesor'])->name('coordinador.reasignar');
+        Route::post('/aceptar-turno',    [CoordinadorController::class, 'aceptarTurno'])->name('coordinador.aceptar');
+        Route::get('/reporte',           [CoordinadorController::class, 'reporteSemanal'])->name('coordinador.reporte');
+        Route::post('/asesor/store',     [CoordinadorController::class, 'storeAsesor'])->name('coordinador.asesor.store');
+    });
 });

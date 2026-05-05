@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'coordinador.inactividad' => \App\Http\Middleware\InactividadCoordinador::class,
             'asesor.inactividad'     => \App\Http\Middleware\InactividadAsesor::class,
+            'digiturno.guest'        => \App\Http\Middleware\RedirectIfAuthenticatedDigiturno::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

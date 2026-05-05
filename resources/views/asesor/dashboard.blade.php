@@ -916,7 +916,7 @@
         let countdownTime = 60;
         let countdownInterval = null;
         let heartbeatInterval = null;
-        const IDLE_LIMIT = 14 * 60 * 1000;
+        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos (el aviso dura 1 min adicional)
 
         function resetIdleTimer() {
             if (document.getElementById('modal-timeout').classList.contains('hidden')) {

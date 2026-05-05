@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 
+use Illuminate\Validation\Rule;
+
 class AsesorController extends Controller
 {
     // ─────────────────────────────────────────────────────────────
@@ -44,7 +46,15 @@ class AsesorController extends Controller
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6|confirmed',
             'ase_tipo_asesor'=> 'required|in:G,V,E',
-            'ase_mesa'       => 'required|integer|min:1|max:20',
+            'ase_mesa'       => [
+                'required',
+                'integer',
+                'min:1',
+                'max:20',
+                Rule::unique('asesor', 'ase_mesa')->where(fn ($q) => $q->where('ase_vigencia', 1))
+            ],
+        ], [
+            'ase_mesa.unique' => 'La mesa seleccionada ya está ocupada por otro asesor activo.'
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -69,13 +79,7 @@ class AsesorController extends Controller
                 'ase_vigencia'      => 1,
             ]);
 
-            session([
-                'asesor_id'   => $asesor->ase_id,
-                'asesor_tipo' => $asesor->ase_tipo_asesor,
-                'asesor_ultima_actividad' => time(),
-            ]);
-
-            return redirect()->route('asesor.dashboard');
+            return redirect()->route('asesor.login')->with('success', 'Cuenta creada exitosamente. Inicie sesión para continuar.');
         });
     }
 

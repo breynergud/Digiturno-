@@ -120,7 +120,8 @@
                                 <div>
                                     <h3 class="text-sm font-black text-black lines-1">{{ $a->persona->pers_nombres }}</h3>
                                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-[#10069f]">
-                                        {{ $a->ase_tipo_asesor == 'G' ? 'General' : ($a->ase_tipo_asesor == 'V' ? 'Víctimas' : 'Prioritario') }}
+                                        {{ $a->ase_tipo_asesor == 'G' ? 'General' : ($a->ase_tipo_asesor == 'V' ? 'Víctimas' : ($a->ase_tipo_asesor == 'E' ? 'Empresario' : 'General')) }}
+                                        <span class="ml-1 px-1.5 py-0.5 bg-[#10069f] text-white rounded text-[8px] tracking-normal">MESA {{ $a->ase_mesa }}</span>
                                     </span>
                                 </div>
                             </div>
@@ -365,7 +366,7 @@
         let countdownTime = 60;
         let countdownInterval = null;
         let heartbeatInterval = null;
-        const IDLE_LIMIT = 14 * 60 * 1000; // 14 minutos en milisegundos
+        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos
 
         function resetIdleTimer() {
             if (document.getElementById('modal-timeout').classList.contains('hidden')) {

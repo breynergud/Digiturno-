@@ -281,8 +281,9 @@
             badge.innerText = label;
             hidden.value = type;
 
-            // Ocultar botones de administración
-            document.getElementById('admin-buttons').classList.add('hidden');
+            // Ocultar botones de administración si existen
+            const adminBtns = document.getElementById('admin-buttons');
+            if (adminBtns) adminBtns.classList.add('hidden');
 
             step1.style.opacity = '0';
             step1.style.transform = 'translateY(-20px)';
@@ -304,8 +305,9 @@
              const step1 = document.getElementById('step-1');
             const step2 = document.getElementById('step-2');
 
-            // Mostrar botones de administración
-            document.getElementById('admin-buttons').classList.remove('hidden');
+            // Mostrar botones de administración si existen
+            const adminBtns = document.getElementById('admin-buttons');
+            if (adminBtns) adminBtns.classList.remove('hidden');
 
             step2.style.opacity = '0';
             step2.style.transform = 'translateY(20px)';

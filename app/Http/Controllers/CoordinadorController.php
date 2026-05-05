@@ -10,6 +10,7 @@ use App\Models\Atencion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class CoordinadorController extends Controller
@@ -64,12 +65,7 @@ class CoordinadorController extends Controller
                 'coor_vigencia'    => 1,
             ]);
 
-            session([
-                'coor_id' => $coor->coor_id,
-                'coor_ultima_actividad' => time(),
-            ]);
-
-            return redirect()->route('coordinador.dashboard');
+            return redirect()->route('coordinador.login')->with('success', 'Cuenta de coordinador creada. Inicie sesión.');
         });
     }
 
@@ -141,6 +137,7 @@ class CoordinadorController extends Controller
                 'ase_id' => $a->ase_id,
                 'nombre' => $a->persona->pers_nombres . ' ' . $a->persona->pers_apellidos,
                 'tipo'   => $a->ase_tipo_asesor,
+                'mesa'   => $a->ase_mesa,
                 'estado' => $a->ase_estado,
                 'turno'  => $a->ase_turno_actual_id,
             ];
@@ -343,7 +340,15 @@ class CoordinadorController extends Controller
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6',
             'ase_tipo_asesor'=> 'required|in:G,V,E',
-            'ase_mesa'       => 'required|integer|min:1|max:20',
+            'ase_mesa'       => [
+                'required',
+                'integer',
+                'min:1',
+                'max:20',
+                Rule::unique('asesor', 'ase_mesa')->where(fn ($q) => $q->where('ase_vigencia', 1))
+            ],
+        ], [
+            'ase_mesa.unique' => 'La mesa seleccionada ya está ocupada por otro asesor activo.'
         ]);
 
         return DB::transaction(function () use ($request) {

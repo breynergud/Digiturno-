@@ -56,6 +56,12 @@
             <h2 class="text-2xl font-black text-black mb-1">Bienvenido</h2>
             <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Ingrese sus credenciales APE</p>
 
+            @if (session('success'))
+                <div class="bg-green-50 border-l-4 border-green-500 text-green-700 rounded-xl px-4 py-3 mb-8 text-sm font-bold">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="bg-red-50 border-l-4 border-red-500 text-red-700 rounded-xl px-4 py-3 mb-8 text-sm font-bold">
                     {{ $errors->first() }}

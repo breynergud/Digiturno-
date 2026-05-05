@@ -16,7 +16,7 @@ class InactividadAsesor
         if (session()->has('asesor_id')) {
             $lastActivity = session('asesor_ultima_actividad');
             $currentTime = time();
-            $timeout = 900; // 15 minutos en segundos
+            $timeout = 300; // 5 minutos en segundos
 
             if ($lastActivity && ($currentTime - $lastActivity > $timeout)) {
                 // EXCEPCIÓN: Si el asesor está en espera o atendiendo un turno, no cerramos sesión
