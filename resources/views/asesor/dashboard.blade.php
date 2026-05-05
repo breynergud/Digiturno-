@@ -76,12 +76,12 @@
         <div class="flex items-center gap-4">
             {{-- Estado actual --}}
             <div id="estado-badge" class="flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2
-                {{ $asesor->ase_estado === 'disponible' ? 'bg-[#10069f] text-white border-[#10069f]' :
-                   ($asesor->ase_estado === 'en_espera'  ? 'bg-[#ffb500] text-[#0a0455] border-[#ffb500]' :
+                {{ $asesor->ase_estado === 'disponible' ? 'bg-green-600 text-white border-green-600' :
+                   ($asesor->ase_estado === 'en_espera'  ? 'bg-gray-400 text-white border-gray-400' :
                                                             'bg-blue-600 text-white border-blue-600') }}">
                 <span class="w-1.5 h-1.5 rounded-full inline-block
-                    {{ $asesor->ase_estado === 'disponible' ? 'bg-white pulse-blue' :
-                       ($asesor->ase_estado === 'en_espera'  ? 'bg-[#0a0455]' : 'bg-white') }}"></span>
+                    {{ $asesor->ase_estado === 'disponible' ? 'bg-white animate-pulse' :
+                       ($asesor->ase_estado === 'en_espera'  ? 'bg-white' : 'bg-white') }}"></span>
                 <span id="estado-texto">
                     {{ $asesor->ase_estado === 'disponible' ? 'Disponible' : ($asesor->ase_estado === 'en_espera' ? 'En Espera' : 'Ocupado') }}
                 </span>
@@ -474,8 +474,8 @@
             textoEl.innerText = labels[estado] || estado;
 
             badge.className = `flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ` + (
-                estado === 'disponible' ? 'bg-[#10069f] text-white border-[#10069f]' :
-                estado === 'en_espera'  ? 'bg-[#ffb500] text-[#0a0455] border-[#ffb500]' :
+                estado === 'disponible' ? 'bg-green-600 text-white border-green-600' :
+                estado === 'en_espera'  ? 'bg-gray-400 text-white border-gray-400' :
                                           'bg-blue-600 text-white border-blue-600'
             );
 
@@ -751,7 +751,13 @@
                                 <p class="text-blue-600 text-[10px] font-bold uppercase tracking-wider">Empresario</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                            <div class="flex items-center gap-3">
+                                <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                                <button onclick="aceptarTurnoEspecifico(${t.id})" 
+                                    class="bg-blue-600 text-white font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-blue-800">
+                                    ATENDER
+                                </button>
+                            </div>
                         </div>
                     `).join('');
                 }

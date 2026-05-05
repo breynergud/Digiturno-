@@ -83,16 +83,7 @@
                     @endforelse
                 </div>
 
-                @if($coordinador->coor_estado === 'disponible' && count($colaEmpresario) > 0)
-                <button onclick="aceptarTurno()" class="w-full mt-6 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 uppercase text-xs tracking-widest border-b-4 border-[#0a0455]">
-                    Llamar Siguiente
-                </button>
-                @elseif($coordinador->coor_estado === 'ocupado')
-                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
-                    <p class="text-[10px] font-black text-yellow-800 uppercase tracking-widest">Atención en Curso</p>
-                    <p class="text-sm font-bold text-yellow-900 mt-1">Finalice desde su panel</p>
-                </div>
-                @endif
+                {{-- El coordinador ya no atiende turnos, solo supervisa --}}
             </section>
         </div>
 
@@ -110,7 +101,7 @@
                     @foreach($asesores as $a)
                     <div class="bg-gray-50 border border-gray-100 rounded-3xl p-5 relative overflow-hidden group">
                         <!-- Status Bar -->
-                        <div class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-[#10069f]' : ($a->ase_estado === 'ocupado' ? 'bg-[#ff671f]' : 'bg-gray-400') }}"></div>
+                        <div class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-green-500' : ($a->ase_estado === 'ocupado' ? 'bg-blue-500' : 'bg-gray-400') }}"></div>
                         
                         <div class="flex items-start justify-between">
                             <div class="flex items-center space-x-3">
@@ -126,7 +117,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-blue-100 text-[#10069f]' : ($a->ase_estado === 'ocupado' ? 'bg-orange-100 text-[#ff671f]' : 'bg-gray-100 text-gray-600') }}">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-green-100 text-green-700' : ($a->ase_estado === 'ocupado' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600') }}">
                                     {{ $a->ase_estado }}
                                 </span>
                             </div>

@@ -225,16 +225,16 @@ Este documento contiene las 28 especificaciones de Casos de Uso ajustadas a la l
 
 ---
 
-### CU-18: Pasar Turno a Espera (Re-encolar)
+### CU-18: Consulta de Historial de Atenciones del Día (Asesor)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CU-18: Pasar Turno a Espera (Re-encolar) |
+| **ID / Nombre** | CU-18: Consulta de Historial de Atenciones del Día (Asesor) |
 | **Actor** | Asesor |
-| **Descripción** | Devuelve un turno a la cola de pendientes para ser atendido después. |
-| **Precondiciones** | El usuario no está listo o necesita un trámite previo. |
-| **Flujo Principal** | 1. El asesor presiona "Pasar a Espera".<br>2. El sistema desvincula el turno de la mesa actual.<br>3. El turno regresa al estado "Pendiente" con su prioridad original.<br>4. El asesor queda disponible. |
-| **Postcondiciones** | El turno vuelve a aparecer en la cola general. |
-| **Excepciones** | N/A |
+| **Descripción** | Permite al asesor visualizar de forma inmediata la lista de todos los turnos que ha procesado durante su jornada actual. |
+| **Precondiciones** | El asesor debe tener una sesión activa. |
+| **Flujo Principal** | 1. El asesor se desplaza a la sección inferior de su dashboard.<br>2. El sistema consulta la base de datos filtrando las atenciones del asesor con la fecha de hoy.<br>3. Se muestra una tabla cronológica con el código del turno, la hora de inicio y la hora de finalización. |
+| **Postcondiciones** | El asesor tiene visibilidad y control sobre su productividad diaria sin salir de su panel. |
+| **Excepciones** | Sin atenciones: Si es el inicio de la jornada, el sistema muestra el mensaje "No hay atenciones registradas hoy". |
 
 ---
 
@@ -264,15 +264,15 @@ Este documento contiene las 28 especificaciones de Casos de Uso ajustadas a la l
 
 ---
 
-### CU-21: Llamado Directo de Turnos Empresarios
+### CU-21: Atención de Turnos del Sector Empresarial
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CU-21: Llamado Directo de Turnos Empresarios |
-| **Actor** | Coordinador |
-| **Descripción** | El coordinador puede atender directamente a los empresarios desde su panel. |
-| **Precondiciones** | Existencia de turnos de tipo "Empresario". |
-| **Flujo Principal** | 1. El coordinador observa la cola de empresarios.<br>2. Presiona "Aceptar Turno Empresario".<br>3. El sistema asigna el turno al coordinador.<br>4. El llamado suena en la TV indicando la mesa de coordinación. |
-| **Postcondiciones** | El empresario es atendido con prioridad administrativa. |
+| **ID / Nombre** | CU-21: Atención de Turnos del Sector Empresarial |
+| **Actor** | Asesor |
+| **Descripción** | Permite que cualquier asesor disponible atienda turnos de la categoría "Empresario" (E-xxx). |
+| **Precondiciones** | Existencia de turnos tipo E-xxx en cola. |
+| **Flujo Principal** | 1. El asesor visualiza la cola empresarial en su dashboard.<br>2. El sistema permite aceptar el turno E-xxx específico.<br>3. El asesor inicia la atención y captura los datos del empresario. |
+| **Postcondiciones** | El turno empresarial es procesado por un asesor. |
 | **Excepciones** | N/A |
 
 ---
@@ -355,13 +355,13 @@ Este documento contiene las 28 especificaciones de Casos de Uso ajustadas a la l
 
 ---
 
-### CU-28: Notificación de Turnos Prioritarios Pendientes
+### CU-28: Registro de Inasistencia (Usuario Ausente)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CU-28: Notificación de Turnos Prioritarios Pendientes |
+| **ID / Nombre** | CU-28: Registro de Inasistencia (Usuario Ausente) |
 | **Actor** | Asesor |
-| **Descripción** | El sistema avisa visualmente si hay personas vulnerables esperando. |
-| **Precondiciones** | Turno de tipo "Victimas" o "Prioritario" con más de 5 min en cola. |
-| **Flujo Principal** | 1. El sistema detecta la espera prolongada en colas especiales.<br>2. Hace parpadear en rojo el panel lateral del asesor.<br>3. Muestra el contador de tiempo en negrita para incentivar el llamado. |
-| **Postcondiciones** | El asesor prioriza la atención de estos casos. |
+| **Descripción** | Permite marcar un turno como "ausente" si el ciudadano no se presenta a la mesa tras el llamado. |
+| **Precondiciones** | El asesor debe haber aceptado un turno y estar en estado "Ocupado". |
+| **Flujo Principal** | 1. El asesor observa que el ciudadano no llega a la mesa.<br>2. Presiona el botón "El usuario no se presentó".<br>3. El sistema solicita confirmación.<br>4. El turno se marca con estado "Ausente" y el asesor queda "Disponible" de nuevo. |
+| **Postcondiciones** | El turno se cierra sin atención efectiva y el asesor puede recibir un nuevo llamado. |
 | **Excepciones** | N/A |

@@ -262,18 +262,18 @@ Este documento contiene el desglose paso a paso de las 48 pruebas técnicas del 
 
 ---
 
-### CP-018: Marquesina sin mensajes muestra fecha y hora
+### CP-018: Consulta de Historial de Atenciones del Día (Asesor)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-018: Marquesina con fecha y hora |
-| **Prioridad** | Baja |
-| **Módulo** | CU-03: Visualización de Turnos (TV) |
-| **Precondiciones** | No hay avisos configurados. |
-| **Descripción** | Aprovechar el espacio de la marquesina. |
+| **ID / Nombre** | CP-018: Consulta de Historial de Atenciones del Día |
+| **Prioridad** | Media |
+| **Módulo** | CU-18: Consulta de Historial de Atenciones del Día (Asesor) |
+| **Precondiciones** | El asesor debe haber finalizado al menos una atención en el día actual. |
+| **Descripción** | Verificar que el asesor pueda visualizar correctamente su historial de trabajo diario en la parte inferior del dashboard. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Observación visual | Se muestra "Hoy es [Fecha] - [Hora]" en la parte inferior. | | |
+| Desplazarse al final del Dashboard del Asesor | El sistema muestra una tabla con los códigos de los turnos atendidos, su hora de inicio y su hora de finalización. | El sistema utiliza la función interna `getHistorialHoy` para recuperar y mostrar cronológicamente las atenciones del asesor en la sesión actual. | Cumple |
 
 ---
 
@@ -547,33 +547,33 @@ Este documento contiene el desglose paso a paso de las 48 pruebas técnicas del 
 
 ---
 
-### CP-037: Coordinador llama y atiende turno empresarial
+### CP-037: Asesor atiende turno empresarial
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-037: Llamado Empresarial Admin |
+| **ID / Nombre** | CP-037: Llamado Empresarial Asesor |
 | **Prioridad** | Alta |
 | **Módulo** | CU-21: Atención Empresarial |
 | **Precondiciones** | Turno E pendiente. |
-| **Descripción** | Atención VIP. |
+| **Descripción** | Los asesores pueden seleccionar y atender turnos de empresarios. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Clic en "Atender Empresario" | El sistema asigna el turno E al coordinador y suena en TV. | | |
+| Clic en "ATENDER" (Asesor) | El sistema asigna el turno E al asesor y suena en TV con su número de mesa. | El sistema asigna el turno al asesor de forma exitosa y permite la captura de datos. | Cumple |
 
 ---
 
-### CP-038: Coordinador en supervisión intensiva no puede atender
+### CP-038: Bloqueo de atención para Coordinadores
 | Campo | Detalle |
 | :--- | :--- |
 | **ID / Nombre** | CP-038: Bloqueo Atención Admin |
 | **Prioridad** | Media |
 | **Módulo** | CU-21: Atención Empresarial |
-| **Precondiciones** | Coordinador no disponible. |
-| **Descripción** | Proteger roles administrativos. |
+| **Precondiciones** | Sesión de Coordinador activa. |
+| **Descripción** | El coordinador solo supervisa; no debe tener botones de atención. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Intentar llamar sin estar logueado | El sistema redirige al login administrativo. | | |
+| Observar panel Coordinador | No existe botón de "Llamar Siguiente" ni "Atender". | El dashboard del coordinador solo muestra la cola informativa, sin botones de acción. | Cumple |
 
 ---
 
@@ -667,33 +667,33 @@ Este documento contiene el desglose paso a paso de las 48 pruebas técnicas del 
 
 ---
 
-### CP-045: Alerta visual de turno prioritario en panel asesor
+### CP-045: Registro de Inasistencia (Ausente)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-045: Alerta Visual Prioridad |
+| **ID / Nombre** | CP-045: Registro de Ausencia |
 | **Prioridad** | Alta |
-| **Módulo** | CU-28: Notificación Prioritarios |
-| **Precondiciones** | Turno V esperando > 5 min. |
-| **Descripción** | Incentivo de atención rápida. |
+| **Módulo** | CU-28: Registro de Inasistencia |
+| **Precondiciones** | Turno aceptado por asesor. |
+| **Descripción** | Validar que el botón de ausencia cierre el turno correctamente. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Observar panel asesor | El contador del turno en el panel lateral parpadea en rojo. | | |
+| Clic en "El usuario no se presentó" | El sistema marca el turno como ausente y libera al asesor. | El registro de atencion se guarda con estado 'ausente' y el asesor vuelve a estar 'Disponible'. | Cumple |
 
 ---
 
-### CP-046: Modo silencio — solo alerta visual sin sonido
+### CP-046: Cancelación de Registro de Ausencia
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-046: Alerta Silenciosa |
+| **ID / Nombre** | CP-046: Cancelar Ausencia |
 | **Prioridad** | Media |
-| **Módulo** | CU-28: Notificación Prioritarios |
-| **Precondiciones** | N/A |
-| **Descripción** | Evitar estrés sonoro en el asesor. |
+| **Módulo** | CU-28: Registro de Inasistencia |
+| **Precondiciones** | Clic en botón de ausencia. |
+| **Descripción** | Verificar que se pida confirmación antes de cerrar. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Notificación roja | No se emite sonido de sistema; la alerta es puramente visual en el dashboard. | | |
+| Cancelar en el cuadro de diálogo | El sistema no cierra el turno y mantiene al asesor en atención. | El sistema detiene la acción y permite continuar con la atención del usuario. | Cumple |
 
 ---
 

@@ -166,44 +166,6 @@ class CoordinadorController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function aceptarTurno()
-    {
-        $coorId = session('coor_id');
-        if (! $coorId) return response()->json(['error' => 'no_session'], 401);
-
-        $coordinador = Coordinador::findOrFail($coorId);
-
-        if ($coordinador->coor_estado !== 'disponible') {
-            return response()->json(['error' => 'El coordinador ya está ocupado.'], 422);
-        }
-
-        return DB::transaction(function () use ($coordinador) {
-            $turno = $this->getSiguienteTurnoEmpresario();
-
-            if (! $turno) {
-                return response()->json(['error' => 'No hay turnos empresariales.'], 404);
-            }
-
-            // Registrar atención (tipo Especial/Empresario)
-            Atencion::create([
-                'atnc_hora_inicio' => now(),
-                'atnc_tipo'        => 'General', 
-                'TURNO_tur_id'     => $turno->tur_id,
-                'COORDINADOR_coor_id' => $coordinador->coor_id,
-            ]);
-
-            $coordinador->update([
-                'coor_estado' => 'ocupado'
-            ]);
-
-            return response()->json([
-                'success'      => true,
-                'codigo_turno' => $turno->tur_numero,
-                'ase_estado'   => 'ocupado',
-            ]);
-        });
-    }
-
     // ─────────────────────────────────────────────────────────────
     //  REPORTE SEMANAL
     // ─────────────────────────────────────────────────────────────
@@ -392,13 +354,14 @@ class CoordinadorController extends Controller
             ->toArray();
     }
 
-    private function getSiguienteTurnoEmpresario()
+    private function getColaEmpresario(): array
     {
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->where('tur_tipo', 'Empresario')
             ->whereDate('tur_hora_fecha', today())
             ->orderBy('tur_id')
-            ->first();
+            ->get()
+            ->toArray();
     }
 }
