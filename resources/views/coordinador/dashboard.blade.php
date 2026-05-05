@@ -83,7 +83,16 @@
                     @endforelse
                 </div>
 
-                {{-- El coordinador ya no atiende turnos, solo supervisa --}}
+                @if($coordinador->coor_estado === 'disponible' && count($colaEmpresario) > 0)
+                <button onclick="aceptarTurno()" class="w-full mt-6 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 uppercase text-xs tracking-widest border-b-4 border-[#0a0455]">
+                    Llamar Siguiente
+                </button>
+                @elseif($coordinador->coor_estado === 'ocupado')
+                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
+                    <p class="text-[10px] font-black text-yellow-800 uppercase tracking-widest">Atención en Curso</p>
+                    <p class="text-sm font-bold text-yellow-900 mt-1">Finalice desde su panel</p>
+                </div>
+                @endif
             </section>
         </div>
 
@@ -101,7 +110,7 @@
                     @foreach($asesores as $a)
                     <div class="bg-gray-50 border border-gray-100 rounded-3xl p-5 relative overflow-hidden group">
                         <!-- Status Bar -->
-                        <div class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-green-500' : ($a->ase_estado === 'ocupado' ? 'bg-blue-500' : 'bg-gray-400') }}"></div>
+                        <div id="bar-asesor-{{ $a->ase_id }}" class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-green-500' : ($a->ase_estado === 'ocupado' ? 'bg-blue-500' : 'bg-gray-400') }}"></div>
                         
                         <div class="flex items-start justify-between">
                             <div class="flex items-center space-x-3">
@@ -117,8 +126,8 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-green-100 text-green-700' : ($a->ase_estado === 'ocupado' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600') }}">
-                                    {{ $a->ase_estado }}
+                                <span id="badge-asesor-{{ $a->ase_id }}" class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-green-100 text-green-700' : ($a->ase_estado === 'ocupado' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500') }}">
+                                    {{ $a->ase_estado === 'disponible' ? 'Disponible' : ($a->ase_estado === 'ocupado' ? 'Ocupado' : 'En Espera') }}
                                 </span>
                             </div>
                         </div>
@@ -349,6 +358,31 @@
 
                 const data = await res.json();
                 document.getElementById('empresario-count').innerText = data.colaEmpresario.length;
+
+                // Actualizar badges de estado de asesores en tiempo real
+                if (data.asesores) {
+                    data.asesores.forEach(a => {
+                        const badge = document.getElementById('badge-asesor-' + a.ase_id);
+                        const bar   = document.getElementById('bar-asesor-' + a.ase_id);
+                        if (!badge) return;
+
+                        const labels = { disponible: 'Disponible', ocupado: 'Ocupado', en_espera: 'En Espera' };
+                        const badgeClasses = {
+                            disponible: 'bg-green-100 text-green-700',
+                            ocupado:    'bg-blue-100 text-blue-700',
+                            en_espera:  'bg-gray-100 text-gray-500',
+                        };
+                        const barClasses = {
+                            disponible: 'bg-green-500',
+                            ocupado:    'bg-blue-500',
+                            en_espera:  'bg-gray-400',
+                        };
+
+                        badge.textContent = labels[a.estado] || a.estado;
+                        badge.className = 'inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ' + (badgeClasses[a.estado] || 'bg-gray-100 text-gray-500');
+                        if (bar) bar.className = 'absolute top-0 left-0 w-full h-1 ' + (barClasses[a.estado] || 'bg-gray-400');
+                    });
+                }
             } catch (e) { console.error(e); }
         }, 5000);
 

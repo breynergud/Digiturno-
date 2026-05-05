@@ -353,15 +353,4 @@ class CoordinadorController extends Controller
             ->get()
             ->toArray();
     }
-
-    private function getColaEmpresario(): array
-    {
-        $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
-        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', 'Empresario')
-            ->whereDate('tur_hora_fecha', today())
-            ->orderBy('tur_id')
-            ->get()
-            ->toArray();
-    }
 }
