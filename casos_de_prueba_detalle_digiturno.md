@@ -667,33 +667,33 @@ Este documento contiene el desglose paso a paso de las 48 pruebas técnicas del 
 
 ---
 
-### CP-045: Registro de Inasistencia (Ausente)
+### CP-045: Notificación Visual de Llamado (TV)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-045: Registro de Ausencia |
+| **ID / Nombre** | CP-045: Notificación Visual TV |
 | **Prioridad** | Alta |
-| **Módulo** | CU-28: Registro de Inasistencia |
-| **Precondiciones** | Turno aceptado por asesor. |
-| **Descripción** | Validar que el botón de ausencia cierre el turno correctamente. |
+| **Módulo** | CU-28: Notificación TV |
+| **Precondiciones** | Módulo TV cargado. |
+| **Descripción** | Verificar que el turno aparezca resaltado en la pantalla de TV. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Clic en "El usuario no se presentó" | El sistema marca el turno como ausente y libera al asesor. | El registro de atencion se guarda con estado 'ausente' y el asesor vuelve a estar 'Disponible'. | Cumple |
+| Aceptar turno G-001 | El número G-001 aparece en la sección principal de la TV con su mesa. | El sistema actualiza la vista de la TV al instante mostrando el turno llamado en tamaño destacado. | Cumple |
 
 ---
 
-### CP-046: Cancelación de Registro de Ausencia
+### CP-046: Notificación Sonora de Llamado (TV)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CP-046: Cancelar Ausencia |
-| **Prioridad** | Media |
-| **Módulo** | CU-28: Registro de Inasistencia |
-| **Precondiciones** | Clic en botón de ausencia. |
-| **Descripción** | Verificar que se pida confirmación antes de cerrar. |
+| **ID / Nombre** | CP-046: Timbre de Llamado |
+| **Prioridad** | Alta |
+| **Módulo** | CU-28: Notificación TV |
+| **Precondiciones** | Altavoces de TV activos. |
+| **Descripción** | Asegurar que el sistema emita el sonido de alerta. |
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Cancelar en el cuadro de diálogo | El sistema no cierra el turno y mantiene al asesor en atención. | El sistema detiene la acción y permite continuar con la atención del usuario. | Cumple |
+| Generar nuevo llamado | La TV reproduce un audio claro para captar la atención. | El navegador de la TV reproduce el archivo de audio configurado en el momento del refresco de datos. | Cumple |
 
 ---
 

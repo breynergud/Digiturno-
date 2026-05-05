@@ -355,13 +355,13 @@ Este documento contiene las 28 especificaciones de Casos de Uso ajustadas a la l
 
 ---
 
-### CU-28: Registro de Inasistencia (Usuario Ausente)
+### CU-28: Notificación Sonora y Visual de Llamado (Módulo TV)
 | Campo | Detalle |
 | :--- | :--- |
-| **ID / Nombre** | CU-28: Registro de Inasistencia (Usuario Ausente) |
-| **Actor** | Asesor |
-| **Descripción** | Permite marcar un turno como "ausente" si el ciudadano no se presenta a la mesa tras el llamado. |
-| **Precondiciones** | El asesor debe haber aceptado un turno y estar en estado "Ocupado". |
-| **Flujo Principal** | 1. El asesor observa que el ciudadano no llega a la mesa.<br>2. Presiona el botón "El usuario no se presentó".<br>3. El sistema solicita confirmación.<br>4. El turno se marca con estado "Ausente" y el asesor queda "Disponible" de nuevo. |
-| **Postcondiciones** | El turno se cierra sin atención efectiva y el asesor puede recibir un nuevo llamado. |
+| **ID / Nombre** | CU-28: Notificación Sonora y Visual de Llamado |
+| **Actor** | Sistema / Usuario |
+| **Descripción** | Emite una alerta auditiva y resalta visualmente el turno llamado en la pantalla principal (TV). |
+| **Precondiciones** | El Módulo TV debe estar abierto en una pantalla visible al público. |
+| **Flujo Principal** | 1. El asesor presiona "Aceptar Turno".<br>2. El sistema actualiza el estado del turno.<br>3. La pantalla de TV detecta el nuevo llamado mediante polling.<br>4. La TV reproduce un sonido de notificación ("Ding") y muestra el número de turno y mesa en el área de destacados. |
+| **Postcondiciones** | El ciudadano es alertado para dirigirse a la mesa asignada. |
 | **Excepciones** | N/A |
