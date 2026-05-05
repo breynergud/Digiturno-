@@ -156,8 +156,8 @@ class AsesorController extends Controller
         
         // 2. Separar por tipo para la interfaz
         $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
-        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Prioritario'));
-        $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
+        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => in_array($t['tipo'], ['Prioritario', 'Especial', 'Victimas'])));
+        $colaVictimas    = []; // Ya se incluyeron en la cola prioritaria para la UI
         $colaEmpresario  = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Empresario'));
 
         $historial = $this->getHistorialHoy($asesor);
@@ -166,6 +166,7 @@ class AsesorController extends Controller
             'estado'            => $asesor->ase_estado,
             'turno_actual_id'   => $asesor->ase_turno_actual_id,
             'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
+            'tipo_asesor'       => $tipo,
             'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas) + count($colaEmpresario),
             'cola_prioritaria'  => $colaPrioritaria,
             'cola_general'      => $colaGeneral,
@@ -287,10 +288,12 @@ class AsesorController extends Controller
 
             // Si se envió un ID específico (desde la lista de prioritarios, víctimas o empresario)
             if ($request->has('tur_id')) {
+                $mesa = $asesor->ase_mesa ?? 0;
                 $turno = TurnoUnificado::where('tur_id', $request->tur_id)
                     ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id'))
                     ->whereIn('tur_tipo', $tiposPermitidos)
-                    ->first(); // Sin filtro de mesa — el asesor eligió este turno explícitamente
+                    ->where('tur_mesa', $mesa) // Estricto a mi mesa
+                    ->first(); // El asesor eligió este turno explícitamente
             }
 
             // Fallback por prioridad automática (Siguiente en mi mesa o Desbordamiento)
@@ -311,7 +314,7 @@ class AsesorController extends Controller
 
             // Re-vincular el turno unificado al asesor actual (por si se desbordó de otra mesa)
             $turno->update([
-                'tur_mesa'      => $asesor->ase_mesa,
+                'tur_mesa'      => $asesor->ase_mesa ?? 0,
                 'ASESOR_ase_id' => $asesor->ase_id,
             ]);
 
@@ -325,7 +328,7 @@ class AsesorController extends Controller
             // Actualizar espejo en tabla vieja para la TV
             \App\Models\Turno::where('codigo_turno', $turno->tur_numero)
                 ->whereDate('created_at', today())
-                ->update(['mesa' => $asesor->ase_mesa]);
+                ->update(['mesa' => $asesor->ase_mesa ?? 0]);
 
             // Obtener info del cliente
             $persona = $this->getPersonaDelTurno($turno);
@@ -415,6 +418,7 @@ class AsesorController extends Controller
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         $hoy = today();
+        $mesa = $asesor->ase_mesa ?? 0;
 
         // Empresario: cola global sin filtro de mesa
         if ($tipo === 'E') {
@@ -431,10 +435,12 @@ class AsesorController extends Controller
                 ])->toArray();
         }
 
-        // Prioritarios/Víctimas: siempre globales
-        $prioritarios = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->whereIn('tur_tipo', array_intersect($tiposPermitidos, ['Victimas', 'Prioritario']))
+        // Para los demás: aplicamos filtro por MESA estricto según la lógica local
+        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->whereIn('tur_tipo', $tiposPermitidos)
+            ->where('tur_mesa', $mesa)
             ->whereDate('tur_hora_fecha', $hoy)
+            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General', 'Empresario')")
             ->orderBy('tur_id')
             ->get()
             ->map(fn($t) => [
@@ -443,47 +449,6 @@ class AsesorController extends Controller
                 'hora'   => $t->tur_hora_fecha,
                 'tipo'   => $t->tur_tipo,
             ])->toArray();
-
-        // Generales: primero los de mi mesa, si no hay, fallback global
-        $generales = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', 'General')
-            ->where('tur_mesa', $asesor->ase_mesa)
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id')
-            ->get();
-
-        if ($generales->isEmpty()) {
-            $generales = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-                ->where('tur_tipo', 'General')
-                ->whereDate('tur_hora_fecha', $hoy)
-                ->orderBy('tur_id')
-                ->get();
-        }
-
-        $generalesArr = $generales->map(fn($t) => [
-            'id'     => $t->tur_id,
-            'codigo' => $t->tur_numero,
-            'hora'   => $t->tur_hora_fecha,
-            'tipo'   => $t->tur_tipo,
-        ])->toArray();
-
-        // Empresarios: globales si el tipo G los incluye
-        $empresariosArr = [];
-        if (in_array('Empresario', $tiposPermitidos)) {
-            $empresariosArr = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-                ->where('tur_tipo', 'Empresario')
-                ->whereDate('tur_hora_fecha', $hoy)
-                ->orderBy('tur_id')
-                ->get()
-                ->map(fn($t) => [
-                    'id'     => $t->tur_id,
-                    'codigo' => $t->tur_numero,
-                    'hora'   => $t->tur_hora_fecha,
-                    'tipo'   => $t->tur_tipo,
-                ])->toArray();
-        }
-
-        return array_merge($prioritarios, $generalesArr, $empresariosArr);
     }
 
     private function getSiguienteTurno(string $tipoAsesor, Asesor $asesor)
@@ -492,12 +457,13 @@ class AsesorController extends Controller
         
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         $hoy = today();
+        $mesa = $asesor->ase_mesa ?? 0;
 
         // 1. Inanición (Prioridad Dinámica): Buscar General con más de 35 min de espera
         if (in_array('General', $tiposPermitidos)) {
             $turnoCritico = TurnoUnificado::whereNotIn('tur_id', $atendidos)
                 ->where('tur_tipo', 'General')
-                ->where('tur_mesa', $asesor->ase_mesa)
+                ->where('tur_mesa', $mesa)
                 ->whereDate('tur_hora_fecha', $hoy)
                 ->where('tur_hora_fecha', '<=', now()->subMinutes(35))
                 ->orderBy('tur_id', 'asc') // El más viejo
@@ -509,7 +475,7 @@ class AsesorController extends Controller
         // 2. Comportamiento normal: Buscar en MI mesa
         $turnoNormal = TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
-            ->where('tur_mesa', $asesor->ase_mesa) // <-- Filtro por MESA
+            ->where('tur_mesa', $mesa) // <-- Filtro por MESA
             ->whereDate('tur_hora_fecha', $hoy)
             ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id', 'asc')
@@ -532,7 +498,7 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V' => ['Victimas'],
-            'G' => ['Victimas', 'Prioritario', 'General', 'Empresario'],
+            'G' => ['Prioritario', 'General', 'Victimas', 'Empresario'],
             'E' => ['Empresario'],
             'GO'=> ['General'],
             default => ['General'],

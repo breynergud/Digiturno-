@@ -120,11 +120,12 @@
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                         <span class="text-gray-500 font-semibold">Tipo de Cola</span>
-                        <span class="font-black text-[#10069f]">
+                        <span id="tipo-cola-texto" class="font-black text-[#10069f]">
                             @switch($asesor->ase_tipo_asesor)
                                 @case('V') Víctimas @break
                                 @case('G') General @break
                                 @case('P') Prioritario @break
+                                @case('E') Empresario @break
                                 @default {{ $asesor->ase_tipo_asesor }}
                             @endswitch
                         </span>
@@ -647,13 +648,17 @@
         const TAB_ID = sessionStorage.getItem('asesor_tab_id');
 
         // ── Polling de datos ────────────────────────────────────────
+        let currentTipoAsesor = '{{ $asesor->ase_tipo_asesor }}';
+
         async function refreshPollData() {
             try {
-                const res  = await fetch('{{ route("asesor.api.estado") }}?window_id=' + TAB_ID, {
+                const timestamp = new Date().getTime();
+                const res  = await fetch('{{ route("asesor.api.estado") }}?window_id=' + TAB_ID + '&_t=' + timestamp, {
                     headers: { 
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    },
+                    cache: 'no-store'
                 });
 
                 // Si el servidor nos redirigió (302), significa que la sesión expiró
@@ -664,6 +669,26 @@
 
                 if (res.status === 401) { location.href = '{{ route("asesor.login") }}'; return; }
                 const data = await res.json();
+
+                // Detección de cambio de perfil remoto
+                if (data.tipo_asesor && data.tipo_asesor !== currentTipoAsesor) {
+                    currentTipoAsesor = data.tipo_asesor;
+                    
+                    const labelsTipo = {
+                        'V': 'Víctimas',
+                        'G': 'General',
+                        'P': 'Prioritario',
+                        'E': 'Empresario'
+                    };
+                    const nuevoNombre = labelsTipo[currentTipoAsesor] || currentTipoAsesor;
+                    
+                    const spanCola = document.getElementById('tipo-cola-texto');
+                    if (spanCola) {
+                        spanCola.innerText = nuevoNombre;
+                    }
+                    
+                    showToast('Tu perfil ha sido reasignado a: ' + nuevoNombre, 'warn');
+                }
 
                 // 1. Actualizar COLA PRIORITARIA (Global para G)
                 const listaPrioritaria = document.getElementById('lista-cola-prioritaria');
