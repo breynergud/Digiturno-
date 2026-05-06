@@ -83,16 +83,7 @@
                     @endforelse
                 </div>
 
-                @if($coordinador->coor_estado === 'disponible' && count($colaEmpresario) > 0)
-                <button onclick="aceptarTurno()" class="w-full mt-6 bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 uppercase text-xs tracking-widest border-b-4 border-[#0a0455]">
-                    Llamar Siguiente
-                </button>
-                @elseif($coordinador->coor_estado === 'ocupado')
-                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
-                    <p class="text-[10px] font-black text-yellow-800 uppercase tracking-widest">Atención en Curso</p>
-                    <p class="text-sm font-bold text-yellow-900 mt-1">Finalice desde su panel</p>
-                </div>
-                @endif
+
             </section>
         </div>
 
@@ -292,28 +283,7 @@
             } catch (e) { alert('Error de conexión'); }
         });
 
-        async function aceptarTurno() {
-            try {
-                let res = await fetch('{{ route('coordinador.aceptar') }}', {
-                    method: 'POST',
-                    headers: { 
-                        'X-CSRF-TOKEN': CSRF_TOKEN,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
 
-                res = await handleFetchResponse(res);
-                if (!res) return;
-
-                const data = await res.json();
-                if (data.success) {
-                    alert('Turno aceptado: ' + data.codigo_turno);
-                    location.reload();
-                } else {
-                    alert(data.error);
-                }
-            } catch (e) { console.error(e); }
-        }
 
         async function cambiarTipo(select, ase_id) {
             const nuevo_tipo = select.value;

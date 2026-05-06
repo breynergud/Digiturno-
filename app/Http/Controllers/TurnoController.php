@@ -17,10 +17,30 @@ class TurnoController extends Controller
         $request->validate([
             'tipo_atencion' => 'required|string',
             'pers_tipodoc' => 'required|string',
-            'numero_documento' => 'required|string',
+            'numero_documento' => [
+                'required',
+                'numeric',
+                function ($attribute, $value, $fail) use ($request) {
+                    $tipo = $request->input('pers_tipodoc');
+                    $len = strlen((string)$value);
+                    if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
+                        $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
+                    }
+                    if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
+                        $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
+                    }
+                    if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
+                        $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
+                    }
+                },
+            ],
             'pers_nombres' => 'nullable|string',
             'pers_apellidos' => 'nullable|string',
-            'telefono' => 'nullable|string',
+            'telefono' => 'nullable|numeric|digits_between:7,15',
+        ], [
+            'numero_documento.numeric' => 'El número de documento debe ser numérico.',
+            'telefono.numeric' => 'El teléfono debe ser numérico.',
+            'telefono.digits_between' => 'El teléfono debe tener entre 7 y 15 dígitos.',
         ]);
 
         return DB::transaction(function () use ($request) {

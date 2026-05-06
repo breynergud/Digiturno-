@@ -38,7 +38,24 @@ class CoordinadorController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_doc'       => [
+                'required',
+                'numeric',
+                'unique:persona,pers_doc',
+                function ($attribute, $value, $fail) use ($request) {
+                    $tipo = $request->input('pers_tipodoc');
+                    $len = strlen((string)$value);
+                    if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
+                        $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
+                    }
+                    if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
+                        $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
+                    }
+                    if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
+                        $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
+                    }
+                },
+            ],
             'pers_tipodoc'   => 'required|string',
             'pers_nombres'   => 'required|string',
             'pers_apellidos' => 'required|string',
@@ -163,7 +180,64 @@ class CoordinadorController extends Controller
         $asesor = Asesor::findOrFail($request->ase_id);
         $asesor->update(['ase_tipo_asesor' => $request->nuevo_tipo]);
 
+        // Rebalancear turnos luego de cambiar un rol para actualizar las colas
+        $this->rebalancearTurnos();
+
         return response()->json(['success' => true]);
+    }
+
+    private function rebalancearTurnos()
+    {
+        $atendidos = \App\Models\Atencion::pluck('TURNO_tur_id')->toArray();
+        $pendientes = \App\Models\TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->whereNotNull('ASESOR_ase_id')
+            ->whereDate('tur_hora_fecha', today())
+            ->get();
+
+        foreach ($pendientes as $turno) {
+            $tipoAtencion = strtolower($turno->tur_tipo); // victimas, general, prioritario
+
+            if ($tipoAtencion !== 'empresario') {
+                $queryAdvisors = \App\Models\Asesor::query();
+                if ($tipoAtencion === 'victimas') {
+                    $queryAdvisors->whereIn('ase_tipo_asesor', ['V', 'G']);
+                } else {
+                    $queryAdvisors->where('ase_tipo_asesor', 'G');
+                }
+                
+                $advisors = $queryAdvisors->get();
+                if ($advisors->isEmpty()) continue;
+
+                $asesorAsignado = null;
+                $minLoad = PHP_INT_MAX;
+
+                foreach ($advisors as $adv) {
+                    $load = \App\Models\TurnoUnificado::where('ASESOR_ase_id', $adv->ase_id)
+                        ->whereNotIn('tur_id', $atendidos)
+                        ->whereDate('tur_hora_fecha', today())
+                        ->count();
+                    
+                    $carga = $load + ($adv->ase_estado === 'ocupado' ? 1 : 0);
+
+                    if ($carga < $minLoad) {
+                        $minLoad = $carga;
+                        $asesorAsignado = $adv;
+                    }
+                }
+
+                if ($asesorAsignado && $asesorAsignado->ase_id !== $turno->ASESOR_ase_id) {
+                    $turno->update([
+                        'ASESOR_ase_id' => $asesorAsignado->ase_id,
+                        'tur_mesa'      => $asesorAsignado->ase_mesa,
+                    ]);
+                    \App\Models\Turno::where('codigo_turno', $turno->tur_numero)
+                        ->whereDate('created_at', today())
+                        ->update(['mesa' => $asesorAsignado->ase_mesa]);
+                }
+            }
+        }
+        
+        \Illuminate\Support\Facades\Cache::forget('tv_pending_turns');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -295,7 +369,24 @@ class CoordinadorController extends Controller
     public function storeAsesor(Request $request)
     {
         $request->validate([
-            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_doc'       => [
+                'required',
+                'numeric',
+                'unique:persona,pers_doc',
+                function ($attribute, $value, $fail) use ($request) {
+                    $tipo = $request->input('pers_tipodoc');
+                    $len = strlen((string)$value);
+                    if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
+                        $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
+                    }
+                    if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
+                        $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
+                    }
+                    if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
+                        $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
+                    }
+                },
+            ],
             'pers_tipodoc'   => 'required|string',
             'pers_nombres'   => 'required|string',
             'pers_apellidos' => 'required|string',

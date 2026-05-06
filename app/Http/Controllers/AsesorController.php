@@ -39,7 +39,24 @@ class AsesorController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'pers_doc'       => 'required|string|unique:persona,pers_doc',
+            'pers_doc'       => [
+                'required',
+                'numeric',
+                'unique:persona,pers_doc',
+                function ($attribute, $value, $fail) use ($request) {
+                    $tipo = $request->input('pers_tipodoc');
+                    $len = strlen((string)$value);
+                    if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
+                        $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
+                    }
+                    if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
+                        $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
+                    }
+                    if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
+                        $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
+                    }
+                },
+            ],
             'pers_tipodoc'   => 'required|string',
             'pers_nombres'   => 'required|string',
             'pers_apellidos' => 'required|string',
@@ -218,7 +235,23 @@ class AsesorController extends Controller
 
         try {
             $request->validate([
-                'pers_doc'       => 'required',
+                'pers_doc'       => [
+                    'required',
+                    'numeric',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $tipo = $request->input('pers_tipodoc');
+                        $len = strlen((string)$value);
+                        if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
+                            $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
+                        }
+                        if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
+                            $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
+                        }
+                        if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
+                            $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
+                        }
+                    },
+                ],
                 'pers_tipodoc'   => 'required|string|max:45',
                 'pers_nombres'   => 'required|string|max:100',
                 'pers_apellidos' => 'required|string|max:100',

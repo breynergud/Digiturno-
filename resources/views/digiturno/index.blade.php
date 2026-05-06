@@ -148,11 +148,12 @@
                                 onfocus="setActiveInput('input_doc')"
                                 placeholder="Toque los números" 
                                 class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-2xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
+                            <p id="doc-error" class="text-red-500 text-[10px] font-black mt-2 hidden uppercase tracking-widest px-1"></p>
                         </div>
 
                         <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Tipo Documento</label>
-                            <select name="pers_tipodoc" id="pers_tipodoc" required class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
+                            <select name="pers_tipodoc" id="pers_tipodoc" required onchange="hideError()" class="w-full bg-white border-2 border-gray-100 rounded-xl px-4 py-4 text-sm font-black text-ape-dark focus:border-ape-blue outline-none transition-all">
                                 <option value="CC">Cédula CC</option>
                                 <option value="PPT">Permiso por Protección Temporal (PPT)</option>
                             </select>
@@ -229,17 +230,25 @@
             const input = document.getElementById(focusedInput);
             if (input.value.length < 12) {
                 input.value += num;
+                hideError();
             }
         }
         
         function deleteKey() {
             const input = document.getElementById(focusedInput);
             input.value = input.value.slice(0, -1);
+            hideError();
         }
         
         function clearKeys() {
              const input = document.getElementById(focusedInput);
              input.value = '';
+             hideError();
+        }
+
+        function hideError() {
+            const errorMsg = document.getElementById('doc-error');
+            errorMsg.classList.add('hidden');
         }
 
         function setActiveInput(id) {
@@ -328,17 +337,37 @@
             const btn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
             const loader = document.getElementById('btn-loader');
+            const errorMsg = document.getElementById('doc-error');
             
-            // Validación mínima táctil
+            // Validación por tipo de documento
             const doc = document.getElementById('input_doc').value;
-            if (doc.length < 5) {
-                alert("Por favor ingrese un número de documento válido.");
+            const type = document.getElementById('pers_tipodoc').value;
+            
+            // Reglas de longitud (según solicitud: CC debe ser 10)
+            const docRules = {
+                'CC': 10,
+                'PPT': 10,
+                'NIT': 9
+            };
+            
+            const requiredLen = docRules[type] || 5;
+
+            if (doc.length === 0) {
+                errorMsg.innerText = "POR FAVOR COLOQUE SU NÚMERO";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (doc.length < requiredLen) {
+                errorMsg.innerText = `NÚMERO INVÁLIDO - COLOQUE UN NÚMERO VÁLIDO (${requiredLen} DÍGITOS)`;
+                errorMsg.classList.remove('hidden');
                 return;
             }
 
             btn.disabled = true;
             btnText.innerText = "PROCESANDO...";
             loader.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
 
             const formData = new FormData(this);
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -396,7 +425,8 @@
                 }
             } catch (error) {
                 console.error(error);
-                alert(error.message);
+                errorMsg.innerText = error.message.toUpperCase();
+                errorMsg.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
                 btnText.innerText = "GENERAR MI TURNO";

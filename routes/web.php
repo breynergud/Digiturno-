@@ -48,7 +48,6 @@ Route::prefix('coordinador')->group(function () {
         Route::get('/dashboard',         [CoordinadorController::class, 'dashboard'])->name('coordinador.dashboard');
         Route::get('/api/estado',        [CoordinadorController::class, 'apiEstado'])->name('coordinador.api.estado');
         Route::post('/reasignar',        [CoordinadorController::class, 'reasignarAsesor'])->name('coordinador.reasignar');
-        Route::post('/aceptar-turno',    [CoordinadorController::class, 'aceptarTurno'])->name('coordinador.aceptar');
         Route::get('/reporte',           [CoordinadorController::class, 'reporteSemanal'])->name('coordinador.reporte');
         Route::post('/asesor/store',     [CoordinadorController::class, 'storeAsesor'])->name('coordinador.asesor.store');
     });

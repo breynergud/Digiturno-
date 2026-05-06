@@ -15,14 +15,25 @@ class RedirectIfAuthenticatedDigiturno
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Si hay sesión de asesor, redirigir al dashboard de asesor
-        if (session()->has('asesor_id')) {
+        $isAsesorRoute = str_starts_with($request->path(), 'asesor');
+        $isCoorRoute   = str_starts_with($request->path(), 'coordinador');
+
+        // Si ya está logueado en su respectivo portal, lo redirigimos al dashboard
+        if (session()->has('asesor_id') && $isAsesorRoute) {
             return redirect()->route('asesor.dashboard');
         }
-
-        // Si hay sesión de coordinador, redirigir al dashboard de coordinador
-        if (session()->has('coor_id')) {
+        if (session()->has('coor_id') && $isCoorRoute) {
             return redirect()->route('coordinador.dashboard');
+        }
+
+        // Si tiene sesión de coordinador pero intenta entrar al login de asesor, cerramos la de coordinador
+        if (session()->has('coor_id') && $isAsesorRoute) {
+            session()->forget(['coor_id', 'coor_ultima_actividad']);
+        }
+
+        // Si tiene sesión de asesor pero intenta entrar al login de coordinador, cerramos la de asesor
+        if (session()->has('asesor_id') && $isCoorRoute) {
+            session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
         }
 
         $response = $next($request);

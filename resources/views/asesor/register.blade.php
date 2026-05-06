@@ -108,6 +108,7 @@
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Mesa #</label>
                                 <input type="number" name="ase_mesa" id="ase_mesa" value="{{ old('ase_mesa', 1) }}" min="1" max="20" required class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#10069f] outline-none transition-all">
+                                @error('ase_mesa') <p class="text-red-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
