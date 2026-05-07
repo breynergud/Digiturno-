@@ -646,6 +646,7 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V'  => 'Victimas',
+            'P'  => 'Prioritario',
             'E'  => 'Empresario',
             default => 'General',
         };
