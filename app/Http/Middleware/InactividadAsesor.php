@@ -54,6 +54,12 @@ class InactividadAsesor
             else if ($heartbeat && $windowId && $windowId === $storedId) {
                 session(['asesor_ultima_actividad' => $currentTime]);
             }
+        } else {
+            // NO hay sesión iniciada, denegar acceso
+            if ($request->ajax() || $request->wantsJson() || $request->hasHeader('X-Requested-With')) {
+                return response()->json(['error' => 'unauthenticated'], 401);
+            }
+            return redirect()->route('asesor.login');
         }
 
         return $next($request);

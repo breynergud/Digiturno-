@@ -38,6 +38,12 @@ class InactividadCoordinador
             else if ($heartbeat && $windowId && $windowId === $storedId) {
                 session(['coor_ultima_actividad' => $currentTime]);
             }
+        } else {
+            // NO hay sesión iniciada, denegar acceso
+            if ($request->ajax() || $request->wantsJson() || $request->hasHeader('X-Requested-With')) {
+                return response()->json(['error' => 'unauthenticated'], 401);
+            }
+            return redirect()->route('coordinador.login');
         }
 
         return $next($request);
