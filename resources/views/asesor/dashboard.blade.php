@@ -872,18 +872,21 @@
                 const listaPrioritaria = document.getElementById('lista-cola-prioritaria');
 
                 if (data.cola_prioritaria && data.cola_prioritaria.length > 0) {
-                    listaPrioritaria.innerHTML = data.cola_prioritaria.map(t => `
-                        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
+                    listaPrioritaria.innerHTML = data.cola_prioritaria.map(t => {
+                        const disabled = !t.habilitado;
+                        return `
+                        <div class="flex items-center justify-between ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-amber-50 border border-amber-200'} p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
                             <div>
-                                <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest">Turno Especial</p>
+                                <p class="${disabled ? 'text-gray-400' : 'text-amber-600'} text-[10px] font-black uppercase tracking-widest">Turno Especial${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <button onclick="aceptarTurnoEspecifico(${t.id})" 
-                                class="bg-[#ffb500] text-[#0a0455] font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-yellow-700">
+                            <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
+                                ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
+                                class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#ffb500] text-[#0a0455] hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-yellow-700'}">
                                 ATENDER
                             </button>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 } else {
                     listaPrioritaria.innerHTML = `
                         <div class="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
@@ -902,18 +905,21 @@
                             <p class="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
                         </div>`;
                 } else {
-                    listaVictimas.innerHTML = colaVictimas.map(t => `
-                        <div class="flex items-center justify-between bg-red-50 border border-red-100 p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
+                    listaVictimas.innerHTML = colaVictimas.map(t => {
+                        const disabled = !t.habilitado;
+                        return `
+                        <div class="flex items-center justify-between ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-red-50 border border-red-100'} p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
                             <div>
-                                <p class="text-red-600 text-[10px] font-black uppercase tracking-widest">Víctimas</p>
+                                <p class="${disabled ? 'text-gray-400' : 'text-red-600'} text-[10px] font-black uppercase tracking-widest">Víctimas${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <button onclick="aceptarTurnoEspecifico(${t.id})"
-                                class="bg-red-600 text-white font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-red-800">
+                            <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
+                                ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
+                                class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-red-800'}">
                                 ATENDER
                             </button>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 }
 
                 // 3. Actualizar COLA GENERAL (Asignada a mí)
@@ -926,15 +932,17 @@
                             <p class="text-slate-300 font-bold uppercase tracking-widest text-sm">Sin turnos generales</p>
                         </div>`;
                 } else {
-                    listaCola.innerHTML = data.cola_general.map(t => `
-                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 bg-white border border-slate-100 shadow-sm">
+                    listaCola.innerHTML = data.cola_general.map(t => {
+                        const disabled = !t.habilitado;
+                        return `
+                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-white border border-slate-100 shadow-sm'}">
                             <div>
-                                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">General</p>
+                                <p class="${disabled ? 'text-gray-400' : 'text-slate-400'} text-[10px] font-bold uppercase tracking-wider">General${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
                             <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 }
 
                 // 4. Actualizar COLA EMPRESARIO
@@ -948,21 +956,24 @@
                             <p class="text-slate-300 font-bold uppercase tracking-widest text-sm">Sin turnos empresariales</p>
                         </div>`;
                 } else {
-                    listaEmpresario.innerHTML = colaEmpresario.map(t => `
-                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 bg-blue-50 border border-blue-100 shadow-sm">
+                    listaEmpresario.innerHTML = colaEmpresario.map(t => {
+                        const disabled = !t.habilitado;
+                        return `
+                        <div class="queue-item rounded-2xl px-5 py-4 flex items-center justify-between animate-in slide-in-from-right duration-300 ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-blue-50 border border-blue-100 shadow-sm'}">
                             <div>
-                                <p class="text-blue-600 text-[10px] font-bold uppercase tracking-wider">Empresario</p>
+                                <p class="${disabled ? 'text-gray-400' : 'text-blue-600'} text-[10px] font-bold uppercase tracking-wider">Empresario${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
-                                <button onclick="aceptarTurnoEspecifico(${t.id})" 
-                                    class="bg-blue-600 text-white font-black py-2 px-4 rounded-lg text-xs uppercase hover:scale-105 transition-transform border-b-2 border-blue-800">
+                                <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
+                                    ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
+                                    class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-blue-800'}">
                                     ATENDER
                                 </button>
                             </div>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 }
 
                 // 5. Lógica de Recordatorio (Solo si el asesor queda disponible y hay prioritarios)
