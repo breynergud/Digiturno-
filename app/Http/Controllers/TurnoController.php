@@ -127,7 +127,7 @@ class TurnoController extends Controller
             // 4. Buscar Asesor para Pre-asignación Balanceada
             $asesorAsignado = null;
             if ($request->tipo_atencion !== 'empresario') {
-                $queryAdvisors = \App\Models\Asesor::query();
+                $queryAdvisors = \App\Models\Asesor::where('ase_estado', '!=', 'inactivo');
                 if ($request->tipo_atencion === 'victimas') {
                     $queryAdvisors->whereIn('ase_tipo_asesor', ['V', 'G']);
                 } else {

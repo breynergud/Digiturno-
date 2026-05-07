@@ -25,7 +25,11 @@ class InactividadAsesor
                     // Refrescamos actividad para que no salte el modal
                     session(['asesor_ultima_actividad' => $currentTime]);
                 } else {
-                    // Al expirar, redirigimos a una página especial de "Sesión Finalizada"
+                    // Al expirar, cerramos el turno en BD y redirigimos a una página especial de "Sesión Finalizada"
+                    $asesorId = session('asesor_id');
+                    if ($asesorId) {
+                        app(\App\Http\Controllers\AsesorController::class)->cerrarTurnoTrabajo($asesorId);
+                    }
                     session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
                     if ($request->ajax() || $request->wantsJson() || $request->hasHeader('X-Requested-With')) {
                         return response()->json(['error' => 'session_expired'], 401);

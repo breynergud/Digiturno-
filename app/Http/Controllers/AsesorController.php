@@ -713,7 +713,7 @@ class AsesorController extends Controller
             })->toArray();
     }
 
-    private function cerrarTurnoTrabajo(int $asesorId): void
+    public function cerrarTurnoTrabajo(int $asesorId): void
     {
         // Cerrar sesión de trabajo activa
         SesionAsesor::where('ASESOR_ase_id', $asesorId)
