@@ -7,6 +7,7 @@ use App\Models\Coordinador;
 use App\Models\Persona;
 use App\Models\TurnoUnificado;
 use App\Models\Atencion;
+use App\Models\SesionAsesor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -336,6 +337,7 @@ class CoordinadorController extends Controller
             });
 
         $atencionesDetalle = [];
+        $sesionesDetalle   = [];
         if ($asesor_id_filter) {
             $atencionesDetalle = Atencion::with('turno')
                 ->where('ASESOR_ase_id', $asesor_id_filter)
@@ -361,9 +363,37 @@ class CoordinadorController extends Controller
                         'estado' => $atnc->atnc_estado
                     ];
                 });
+
+            // Cargar jornadas de trabajo de la semana para este asesor
+            $sesionesDetalle = SesionAsesor::where('ASESOR_ase_id', $asesor_id_filter)
+                ->whereBetween('ses_inicio', [$startOfWeek, $endOfWeek])
+                ->orderBy('ses_inicio', 'desc')
+                ->get()
+                ->map(function($ses) use ($formatTime, $asesor_id_filter, $startOfWeek, $endOfWeek) {
+                    $fin    = $ses->ses_fin;
+                    $inicio = $ses->ses_inicio;
+                    $duracion = $fin
+                        ? $formatTime(Carbon::parse($inicio)->diffInSeconds(Carbon::parse($fin)))
+                        : 'En curso';
+
+                    // Contar atenciones realizadas dentro de esta jornada
+                    $finParaQuery = $fin ?? now();
+                    $atenciones = Atencion::where('ASESOR_ase_id', $asesor_id_filter)
+                        ->whereBetween('atnc_hora_inicio', [$inicio, $finParaQuery])
+                        ->whereNotNull('atnc_hora_fin')
+                        ->count();
+
+                    return [
+                        'inicio'     => Carbon::parse($inicio)->format('d/m/Y h:i A'),
+                        'fin'        => $fin ? Carbon::parse($fin)->format('d/m/Y h:i A') : null,
+                        'duracion'   => $duracion,
+                        'atenciones' => $atenciones,
+                        'activa'     => $fin === null,
+                    ];
+                });
         }
 
-        return view('coordinador.reporte', compact('reporte', 'asesoresDropdown', 'asesor_id_filter', 'atencionesDetalle'));
+        return view('coordinador.reporte', compact('reporte', 'asesoresDropdown', 'asesor_id_filter', 'atencionesDetalle', 'sesionesDetalle'));
     }
 
     public function storeAsesor(Request $request)
@@ -422,7 +452,7 @@ class CoordinadorController extends Controller
                 'PERSONA_pers_doc' => $request->pers_doc,
                 'ase_correo'        => $request->ase_correo,
                 'ase_password'      => Hash::make($request->ase_password),
-                'ase_estado'        => 'disponible',
+                'ase_estado'        => 'inactivo',
                 'ase_vigencia'      => 1,
             ]);
 

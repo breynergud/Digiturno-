@@ -7,6 +7,7 @@ use App\Models\Persona;
 use App\Models\Usuario;
 use App\Models\TurnoUnificado;
 use App\Models\Atencion;
+use App\Models\SesionAsesor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -92,7 +93,7 @@ class AsesorController extends Controller
                 'PERSONA_pers_doc' => $request->pers_doc,
                 'ase_correo'        => $request->ase_correo,
                 'ase_password'      => Hash::make($request->ase_password),
-                'ase_estado'        => 'disponible',
+                'ase_estado'        => 'inactivo',
                 'ase_vigencia'      => 1,
             ]);
 
@@ -124,6 +125,11 @@ class AsesorController extends Controller
 
     public function logout(Request $request)
     {
+        // Cerrar turno de trabajo automáticamente si estaba activo
+        $asesorId = session('asesor_id');
+        if ($asesorId) {
+            $this->cerrarTurnoTrabajo($asesorId);
+        }
         $request->session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
         return redirect()->route('asesor.login');
     }
@@ -171,13 +177,19 @@ class AsesorController extends Controller
         
         $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
         
-        // 2. Separar por tipo para la interfaz
+        // Separar por tipo para la interfaz
         $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
-        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => in_array($t['tipo'], ['Prioritario', 'Especial', 'Victimas'])));
-        $colaVictimas    = []; // Ya se incluyeron en la cola prioritaria para la UI
+        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => in_array($t['tipo'], ['Prioritario', 'Especial'])));
+        $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
         $colaEmpresario  = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Empresario'));
 
         $historial = $this->getHistorialHoy($asesor);
+
+        // Obtener sesión de trabajo activa
+        $sesionActiva = SesionAsesor::where('ASESOR_ase_id', $asesorId)
+            ->whereNull('ses_fin')
+            ->orderBy('ses_id', 'desc')
+            ->first();
 
         return response()->json([
             'estado'            => $asesor->ase_estado,
@@ -190,6 +202,7 @@ class AsesorController extends Controller
             'cola_victimas'     => $colaVictimas,
             'cola_empresario'   => $colaEmpresario,
             'historial'         => $historial,
+            'ses_inicio'        => $sesionActiva ? $sesionActiva->ses_inicio->toIso8601String() : null,
         ]);
     }
 
@@ -301,6 +314,76 @@ class AsesorController extends Controller
     //  ACCIONES
     // ─────────────────────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────────────────────
+    //  TURNO DE TRABAJO
+    // ─────────────────────────────────────────────────────────────
+
+    public function iniciarTurno(Request $request)
+    {
+        $asesorId = session('asesor_id');
+        if (! $asesorId) {
+            return response()->json(['error' => 'no_session'], 401);
+        }
+
+        $asesor = Asesor::findOrFail($asesorId);
+
+        if ($asesor->ase_estado !== 'inactivo') {
+            return response()->json(['error' => 'El turno ya está activo.'], 422);
+        }
+
+        // Cerrar cualquier sesión huérfana (por si acaso)
+        SesionAsesor::where('ASESOR_ase_id', $asesorId)
+            ->whereNull('ses_fin')
+            ->update(['ses_fin' => now()]);
+
+        // Crear nuevo registro de jornada
+        $sesion = SesionAsesor::create([
+            'ses_inicio'      => now(),
+            'ses_fin'         => null,
+            'ASESOR_ase_id'   => $asesorId,
+        ]);
+
+        $asesor->update(['ase_estado' => 'disponible']);
+
+        return response()->json([
+            'success'    => true,
+            'ase_estado' => 'disponible',
+            'ses_inicio' => $sesion->ses_inicio->toIso8601String(),
+        ]);
+    }
+
+    public function finalizarTurno(Request $request)
+    {
+        $asesorId = session('asesor_id');
+        if (! $asesorId) {
+            return response()->json(['error' => 'no_session'], 401);
+        }
+
+        $asesor = Asesor::findOrFail($asesorId);
+
+        if ($asesor->ase_estado === 'inactivo') {
+            return response()->json(['error' => 'El turno ya está finalizado.'], 422);
+        }
+
+        // Si está atendiendo, finalizar la atención primero
+        if ($asesor->ase_estado === 'ocupado' && $asesor->ase_turno_actual_id) {
+            $this->cerrarAtencion($asesor->ase_turno_actual_id, $asesorId, 'atendido');
+            Cache::forget('tv_pending_turns');
+            Cache::forget("cola_asesor_{$asesorId}");
+        }
+
+        $this->cerrarTurnoTrabajo($asesorId);
+
+        return response()->json([
+            'success'    => true,
+            'ase_estado' => 'inactivo',
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  ACCIONES
+    // ─────────────────────────────────────────────────────────────
+
     public function aceptarTurno(Request $request)
     {
         $asesorId = session('asesor_id');
@@ -309,6 +392,10 @@ class AsesorController extends Controller
         }
 
         $asesor = Asesor::findOrFail($asesorId);
+
+        if ($asesor->ase_estado === 'inactivo') {
+            return response()->json(['error' => 'Debe iniciar su turno de trabajo primero.'], 422);
+        }
 
         if ($asesor->ase_estado !== 'disponible') {
             return response()->json(['error' => 'El asesor no está disponible.'], 422);
@@ -598,5 +685,20 @@ class AsesorController extends Controller
                     'hora_fin'   => $a->atnc_hora_fin,
                 ];
             })->toArray();
+    }
+
+    private function cerrarTurnoTrabajo(int $asesorId): void
+    {
+        // Cerrar sesión de trabajo activa
+        SesionAsesor::where('ASESOR_ase_id', $asesorId)
+            ->whereNull('ses_fin')
+            ->update(['ses_fin' => now()]);
+
+        // Poner asesor en inactivo y limpiar turno actual
+        Asesor::where('ase_id', $asesorId)->update([
+            'ase_estado'            => 'inactivo',
+            'ase_turno_actual_id'   => null,
+            'ase_turno_actual_tipo' => null,
+        ]);
     }
 }

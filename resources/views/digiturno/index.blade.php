@@ -144,6 +144,7 @@
                         <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Número de Documento</label>
                             <input type="text" name="numero_documento" id="input_doc" required 
+                                inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                 onclick="setActiveInput('input_doc')"
                                 onfocus="setActiveInput('input_doc')"
                                 placeholder="Toque los números" 

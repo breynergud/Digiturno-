@@ -365,3 +365,33 @@ Este documento contiene las 28 especificaciones de Casos de Uso ajustadas a la l
 | **Flujo Principal** | 1. El asesor presiona "Aceptar Turno".<br>2. El sistema actualiza el estado del turno.<br>3. La pantalla de TV detecta el nuevo llamado mediante polling.<br>4. La TV reproduce un sonido de notificación ("Ding") y muestra el número de turno y mesa en el área de destacados. |
 | **Postcondiciones** | El ciudadano es alertado para dirigirse a la mesa asignada. |
 | **Excepciones** | N/A |
+
+---
+
+### CU-29: Gestión de Jornada Laboral (Shift Control)
+| Campo | Detalle |
+| :--- | :--- |
+| **ID / Nombre** | CU-29: Gestión de Jornada Laboral (Shift Control) |
+| **Actor** | Asesor |
+| **Descripción** | Permite al asesor controlar manualmente el inicio y fin de su tiempo de atención efectivo, independientemente de su login. |
+| **Precondiciones** | Sesión de usuario iniciada en el portal del asesor. |
+| **Flujo Principal** | 1. El asesor visualiza su estado como "Inactivo" al entrar.<br>2. Presiona el botón verde "Iniciar Turno".<br>3. El sistema cambia el estado a "Disponible" y comienza el conteo del tiempo.<br>4. Al terminar su labor, presiona el botón rojo "Finalizar Turno".<br>5. El sistema registra la hora de fin y cambia el estado a "Inactivo". |
+| **Postcondiciones** | Se crea un registro persistente en la tabla `sesion_asesor` para reportes de productividad. |
+| **Excepciones** | Logout Automático: Si el asesor cierra sesión o el sistema expira por inactividad, la jornada laboral se cierra automáticamente por seguridad. |
+
+---
+
+## Anexo: Propuestas de Mejora y Escalabilidad (Roadmap)
+
+Esta sección contiene funcionalidades propuestas para futuras actualizaciones del sistema, diseñadas para optimizar la operación y el bienestar del personal.
+
+### CU-30: Programación de Receso Inteligente (Modo Salida)
+| Campo | Detalle |
+| :--- | :--- |
+| **ID / Nombre** | CU-30: Programación de Receso Inteligente (Modo Salida) |
+| **Actor** | Asesor |
+| **Descripción** | Permite al asesor notificar al sistema su intención de tomar un receso o almuerzo sin interrumpir la atención actual, automatizando el cambio de estado al finalizar. |
+| **Precondiciones** | El asesor debe estar en estado "Ocupado" (atendiendo a un ciudadano). |
+| **Flujo Principal** | 1. El asesor presiona el botón "Programar Receso" en su panel.<br>2. El sistema activa un estado de "Salida Pendiente".<br>3. El Coordinador recibe una alerta visual en su monitor indicando que esa mesa entrará en pausa pronto.<br>4. El asesor finaliza su atención actual normalmente.<br>5. **Automatización**: El sistema, en lugar de poner al asesor como "Disponible", lo cambia inmediatamente a "En Espera". |
+| **Postcondiciones** | El flujo de llamados se detiene para esa mesa de forma controlada y planificada. |
+| **Beneficio Operativo** | Elimina el riesgo de que entren nuevos turnos por accidente cuando el asesor ya debe retirarse, y permite al coordinador prever la capacidad de atención en tiempo real. |

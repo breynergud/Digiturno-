@@ -125,6 +125,58 @@
             @endif
         </div>
 
+        {{-- ─── SECCIÓN JORNADAS DE TRABAJO ──────────────────────────── --}}
+        @if(isset($asesor_id_filter) && $asesor_id_filter && isset($sesionesDetalle))
+        <div class="mt-12 bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-[#10069f]"></div>
+            <div class="p-8 border-b border-gray-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-black text-black uppercase tracking-tight">Jornadas de <span class="text-[#10069f]">Trabajo</span></h2>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Registro de turnos de trabajo del asesor en esta semana</p>
+                </div>
+                <span class="bg-[#10069f] text-white px-4 py-2 rounded-lg text-xs font-black">{{ count($sesionesDetalle) }} Jornada(s)</span>
+            </div>
+            @if(count($sesionesDetalle) > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Inicio de Turno</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fin de Turno</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Duración</th>
+                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Atenciones</th>
+                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($sesionesDetalle as $ses)
+                        <tr class="hover:bg-gray-50/30 transition-colors">
+                            <td class="px-8 py-5 text-xs font-bold text-gray-700">{{ $ses['inicio'] }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-gray-600">{{ $ses['fin'] ?? '—' }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-[#10069f] text-center">{{ $ses['duracion'] }}</td>
+                            <td class="px-8 py-5 text-center">
+                                <span class="bg-[#ffb500] text-[#0a0455] px-3 py-1 rounded-lg text-sm font-black shadow-sm">{{ $ses['atenciones'] }}</span>
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                @if($ses['activa'])
+                                    <span class="bg-green-100 text-green-700 text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-tighter">En curso</span>
+                                @else
+                                    <span class="bg-gray-100 text-gray-500 text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-tighter">Finalizado</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <div class="py-16 text-center">
+                <p class="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">No hay jornadas registradas para este asesor en la semana</p>
+            </div>
+            @endif
+        </div>
+        @endif
+
         @if(isset($asesor_id_filter) && $asesor_id_filter && isset($atencionesDetalle) && count($atencionesDetalle) > 0)
         <div class="mt-12 bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-[#ffb500]"></div>

@@ -101,7 +101,7 @@
                     @foreach($asesores as $a)
                     <div class="bg-gray-50 border border-gray-100 rounded-3xl p-5 relative overflow-hidden group">
                         <!-- Status Bar -->
-                        <div id="bar-asesor-{{ $a->ase_id }}" class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-green-500' : ($a->ase_estado === 'ocupado' ? 'bg-blue-500' : 'bg-gray-400') }}"></div>
+                        <div id="bar-asesor-{{ $a->ase_id }}" class="absolute top-0 left-0 w-full h-1 {{ $a->ase_estado === 'disponible' ? 'bg-green-500' : ($a->ase_estado === 'ocupado' ? 'bg-blue-500' : ($a->ase_estado === 'inactivo' ? 'bg-gray-600' : 'bg-gray-400')) }}"></div>
                         
                         <div class="flex items-start justify-between">
                             <div class="flex items-center space-x-3">
@@ -117,8 +117,8 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span id="badge-asesor-{{ $a->ase_id }}" class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-green-100 text-green-700' : ($a->ase_estado === 'ocupado' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500') }}">
-                                    {{ $a->ase_estado === 'disponible' ? 'Disponible' : ($a->ase_estado === 'ocupado' ? 'Ocupado' : 'En Espera') }}
+                                <span id="badge-asesor-{{ $a->ase_id }}" class="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter {{ $a->ase_estado === 'disponible' ? 'bg-green-100 text-green-700' : ($a->ase_estado === 'ocupado' ? 'bg-blue-100 text-blue-700' : ($a->ase_estado === 'inactivo' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500')) }}">
+                                    {{ $a->ase_estado === 'disponible' ? 'Disponible' : ($a->ase_estado === 'ocupado' ? 'Ocupado' : ($a->ase_estado === 'inactivo' ? 'Inactivo' : 'En Espera')) }}
                                 </span>
                             </div>
                         </div>
@@ -336,16 +336,18 @@
                         const bar   = document.getElementById('bar-asesor-' + a.ase_id);
                         if (!badge) return;
 
-                        const labels = { disponible: 'Disponible', ocupado: 'Ocupado', en_espera: 'En Espera' };
+                        const labels = { disponible: 'Disponible', ocupado: 'Ocupado', en_espera: 'En Espera', inactivo: 'Inactivo' };
                         const badgeClasses = {
                             disponible: 'bg-green-100 text-green-700',
                             ocupado:    'bg-blue-100 text-blue-700',
                             en_espera:  'bg-gray-100 text-gray-500',
+                            inactivo:   'bg-gray-800 text-white',
                         };
                         const barClasses = {
                             disponible: 'bg-green-500',
                             ocupado:    'bg-blue-500',
                             en_espera:  'bg-gray-400',
+                            inactivo:   'bg-gray-600',
                         };
 
                         badge.textContent = labels[a.estado] || a.estado;

@@ -723,4 +723,19 @@ Este documento contiene el desglose paso a paso de las 48 pruebas técnicas del 
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Atención de 20 min | El sistema no cierra sesión porque detecta un "Turno Activo" en mesa. | | |
+---
+
+### CP-049: Flujo completo de inicio y fin de jornada laboral
+| Campo | Detalle |
+| :--- | :--- |
+| **ID / Nombre** | CP-049: Flujo completo de inicio y fin de jornada laboral |
+| **Prioridad** | Alta |
+| **Módulo** | CU-29: Gestión de Jornada Laboral |
+| **Precondiciones** | 1. Sesión de asesor iniciada.<br>2. El asesor debe estar en estado 'Inactivo'. |
+| **Descripción** | Verificar que el asesor puede iniciar y finalizar su turno, y que el tiempo se registra correctamente. |
+
+| Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
+| :--- | :--- | :--- | :--- |
+| Clic en "Iniciar Turno" | El estado cambia a 'Disponible'. Inicia el cronómetro. El coordinador ve al asesor en verde. | | |
+| Clic en "Finalizar Turno" | El sistema solicita confirmación. Al aceptar, el estado vuelve a 'Inactivo'. El cronómetro se detiene y reinicia. | | |
+| Verificar Reporte | El reporte del coordinador muestra la nueva jornada con la duración exacta y atenciones realizadas. | | |
