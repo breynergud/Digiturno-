@@ -143,7 +143,9 @@
                         <tr class="bg-gray-50 border-b border-gray-100">
                             <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Inicio de Turno</th>
                             <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fin de Turno</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Duración</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Duración Bruta</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center text-amber-600">Total Pausas</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center text-[#10069f]">Tiempo Efectivo</th>
                             <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Atenciones</th>
                             <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Estado</th>
                         </tr>
@@ -153,7 +155,14 @@
                         <tr class="hover:bg-gray-50/30 transition-colors">
                             <td class="px-8 py-5 text-xs font-bold text-gray-700">{{ $ses['inicio'] }}</td>
                             <td class="px-4 py-5 text-xs font-bold text-gray-600">{{ $ses['fin'] ?? '—' }}</td>
-                            <td class="px-4 py-5 text-xs font-bold text-[#10069f] text-center">{{ $ses['duracion'] }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-gray-400 text-center">{{ $ses['duracion'] }}</td>
+                            <td class="px-4 py-5 text-xs font-bold text-amber-500 text-center">
+                                {{ $ses['pausa'] }}
+                                @if($ses['auto_pausa'])
+                                    <div class="text-[8px] text-amber-600 font-black uppercase tracking-tighter mt-1">⚠️ Inactividad Detectada</div>
+                                @endif
+                            </td>
+                            <td class="px-4 py-5 text-xs font-bold text-[#10069f] text-center bg-blue-50/50">{{ $ses['efectiva'] }}</td>
                             <td class="px-8 py-5 text-center">
                                 <span class="bg-[#ffb500] text-[#0a0455] px-3 py-1 rounded-lg text-sm font-black shadow-sm">{{ $ses['atenciones'] }}</span>
                             </td>

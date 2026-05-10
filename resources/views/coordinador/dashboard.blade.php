@@ -128,7 +128,9 @@
                                 <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Nueva Cola</label>
                                 <select onchange="cambiarTipo(this, {{ $a->ase_id }})" class="bg-white border border-gray-200 text-[10px] font-bold rounded-lg px-2 py-1 outline-none focus:border-[#10069f]">
                                     <option value="G" {{ $a->ase_tipo_asesor == 'G' ? 'selected' : '' }}>General</option>
-                                    <option value="V" {{ $a->ase_tipo_asesor == 'V' ? 'selected' : '' }}>Víctimas</option>
+                                    @if($a->ase_tipo_asesor == 'V')
+                                        <option value="V" selected>Víctimas</option>
+                                    @endif
                                     <option value="E" {{ $a->ase_tipo_asesor == 'E' ? 'selected' : '' }}>Empresario</option>
                                 </select>
                             </div>
@@ -216,7 +218,6 @@
                         <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fila</label>
                         <select name="ase_tipo_asesor" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
                             <option value="G">General</option>
-                            <option value="V">Víctimas</option>
                             <option value="E">Empresario</option>
                         </select>
                     </div>
@@ -336,17 +337,17 @@
                         const bar   = document.getElementById('bar-asesor-' + a.ase_id);
                         if (!badge) return;
 
-                        const labels = { disponible: 'Disponible', ocupado: 'Ocupado', en_espera: 'En Espera', inactivo: 'Inactivo' };
+                        const labels = { disponible: 'Disponible', ocupado: 'Ocupado', en_espera: 'En Pausa', inactivo: 'Inactivo' };
                         const badgeClasses = {
                             disponible: 'bg-green-100 text-green-700',
                             ocupado:    'bg-blue-100 text-blue-700',
-                            en_espera:  'bg-gray-100 text-gray-500',
+                            en_espera:  'bg-amber-100 text-amber-700',
                             inactivo:   'bg-gray-800 text-white',
                         };
                         const barClasses = {
                             disponible: 'bg-green-500',
                             ocupado:    'bg-blue-500',
-                            en_espera:  'bg-gray-400',
+                            en_espera:  'bg-amber-500',
                             inactivo:   'bg-gray-600',
                         };
 
@@ -358,12 +359,12 @@
             } catch (e) { console.error(e); }
         }, 5000);
 
-        // ── Inactividad (15 min) ───────────────────────────────────
+        // ── Inactividad (5 min total) ──────────────────────────────
         let lastActivityTimestamp = Date.now(); // Usar timestamp real para evitar throttling de pestañas
         let countdownTime = 60;
         let countdownInterval = null;
         let heartbeatInterval = null;
-        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos
+        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos (el aviso dura 1 min adicional)
 
         function resetIdleTimer() {
             if (document.getElementById('modal-timeout').classList.contains('hidden')) {

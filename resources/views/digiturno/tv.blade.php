@@ -38,14 +38,31 @@
         </div>
     </div>
 
-    <div id="master-container" class="flex flex-col h-full flex-1">
+    <div id="master-container" class="flex flex-col h-full flex-1 relative">
         
+        <!-- ─── MODAL DE LLAMADO DESTACADO ────────────────────── -->
+        <div id="modal-llamado" class="fixed inset-0 z-[90] hidden items-center justify-center p-8 bg-[#10069f]/95 backdrop-blur-md transition-all duration-500">
+            <div class="text-center animate-bounce-slow">
+                <div class="bg-white/10 w-40 h-40 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-white/20">
+                    <svg class="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                </div>
+                <h3 class="text-white text-5xl font-black uppercase tracking-[0.2em] mb-4 opacity-70">Atención en Curso</h3>
+                <div id="llamado-codigo" class="text-[15rem] font-black text-white leading-none tracking-tighter drop-shadow-2xl">---</div>
+                <div class="mt-8 flex flex-col items-center">
+                    <span class="text-white text-4xl font-black uppercase tracking-[0.5em] mb-4">Diríjase a</span>
+                    <div id="llamado-mesa" class="bg-[#ffb500] text-[#10069f] px-16 py-6 rounded-[3rem] text-8xl font-black shadow-2xl">MESA --</div>
+                </div>
+            </div>
+        </div>
+
         <main class="flex flex-1 gap-4 overflow-hidden mb-4">
             <!-- COLUMNA IZQUIERDA: VIDEO Y MENSAJES -->
             <div class="w-[60%] flex flex-col gap-4">
-                <!-- VIDEO -->
-                <div class="flex-[3] glass-card overflow-hidden relative shadow-lg">
+                <!-- VIDEO (Soporte YouTube y Local) -->
+                <div class="flex-[3] glass-card overflow-hidden relative shadow-lg bg-black">
+                    <!-- Si tienes un video local, puedes usar la etiqueta <video> aquí -->
                     <iframe 
+                        id="yt-player"
                         class="absolute inset-0 w-full h-full" 
                         src="https://www.youtube.com/embed/nF_azk9vCwo?autoplay=1&mute=1&loop=1&playlist=nF_azk9vCwo&controls=0&modestbranding=1" 
                         frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
@@ -110,6 +127,7 @@
     <script>
         let announcedAttentions = new Set();
         let audioEnabled = false;
+        let modalTimeout = null;
 
         const labels = {
             'victimas': 'Víctimas', 'especial': 'Especial', 'general': 'General', 'empresario': 'Empresas', 'prioritario': 'Prioritario'
@@ -130,6 +148,36 @@
             msg.lang = 'es-ES'; msg.rate = 0.9; window.speechSynthesis.speak(msg);
         }
 
+        function showHighlightedCall(turn) {
+            const modal = document.getElementById('modal-llamado');
+            const codeEl = document.getElementById('llamado-codigo');
+            const mesaEl = document.getElementById('llamado-mesa');
+            
+            codeEl.innerText = turn.codigo_turno;
+            mesaEl.innerText = `MESA ${turn.mesa}`;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Sonar campana
+            document.getElementById('call-sound').play();
+            // Voz: Se anuncia 2 veces para no ser repetitivo
+            speakTurn(turn.codigo_turno, turn.tipo_atencion || '', turn.mesa);
+            
+            // Segunda vez después de 8 segundos
+            setTimeout(() => {
+                if (!modal.classList.contains('hidden')) {
+                    speakTurn(turn.codigo_turno, turn.tipo_atencion || '', turn.mesa);
+                }
+            }, 8000);
+
+            // El modal desaparece solo tras 30s
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 30000);
+        }
+
         async function updateTurns() {
             try {
                 const response = await fetch('{{ route("turnos.api.pendientes") }}');
@@ -143,23 +191,27 @@
                 list.innerHTML = '';
                 allTurns.forEach((turn, index) => {
                     const isCalling = index < data.calling.length;
+                    const hasMesa = turn.mesa && turn.mesa > 0;
+                    
                     const card = document.createElement('div');
                     card.className = `glass-card p-5 flex flex-col gap-1 transition-all ${isCalling ? 'main-call-anim border-l-[15px] border-ape-blue' : ''}`;
                     card.innerHTML = `
                         <div class="flex justify-between items-center">
                             <div class="text-5xl font-black ape-blue tabular-nums tracking-tighter">${turn.codigo_turno}</div>
-                            <div class="text-5xl font-black text-gray-800 tabular-nums">${turn.mesa || '--'}</div>
+                            <div class="text-5xl font-black ${hasMesa ? 'text-gray-800' : 'text-gray-300 text-3xl italic font-bold'} tabular-nums">
+                                ${hasMesa ? turn.mesa : 'ESPERA'}
+                            </div>
                         </div>
                         <div class="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
                              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${labels[turn.tipo_atencion] || turn.tipo_atencion}</p>
-                             ${isCalling ? '<span class="text-[10px] font-black ape-blue animate-pulse tracking-widest">LLAMANDO...</span>' : ''}
+                             ${isCalling ? '<span class="text-[10px] font-black ape-blue animate-pulse tracking-widest">LLAMANDO...</span>' : '<span class="text-[9px] font-bold text-gray-400 tracking-widest uppercase">En cola</span>'}
                         </div>
                     `;
                     list.appendChild(card);
 
-                    // Audio para el nuevo llamado
-                    if (isCalling && !announcedAttentions.has(turn.atencion_id) && audioEnabled) {
-                        speakTurn(turn.codigo_turno, labels[turn.tipo_atencion] || turn.tipo_atencion, turn.mesa);
+                    // AUDIO Y MODAL PARA NUEVO LLAMADO (Solo si es reciente)
+                    if (isCalling && turn.is_recent && !announcedAttentions.has(turn.atencion_id) && audioEnabled) {
+                        showHighlightedCall(turn);
                         announcedAttentions.add(turn.atencion_id);
                     }
                 });

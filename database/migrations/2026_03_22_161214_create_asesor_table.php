@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('ase_tipo_asesor', 2)->nullable();
             $table->integer('PERSONA_pers_doc');
             $table->string('ase_vigencia', 45)->nullable();
-            $table->string('ase_password', 45)->nullable();
+            $table->string('ase_password', 255)->nullable();
             $table->string('ase_correo', 45)->nullable();
             
             $table->foreign('PERSONA_pers_doc')->references('pers_doc')->on('persona');

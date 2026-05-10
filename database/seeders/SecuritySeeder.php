@@ -33,7 +33,8 @@ class SecuritySeeder extends Seeder
             'ase_estado' => 'disponible',
             'PERSONA_pers_doc' => '1001',
             'ase_nrocontrato' => 'CONTR-2024-001',
-            'ase_vigencia' => '2026'
+            'ase_vigencia' => '2026',
+            'ase_mesa' => 1
         ]);
 
         // Persona 2
@@ -50,7 +51,8 @@ class SecuritySeeder extends Seeder
             'ase_estado' => 'disponible',
             'PERSONA_pers_doc' => '1002',
             'ase_nrocontrato' => 'CONTR-2024-002',
-            'ase_vigencia' => '2026'
+            'ase_vigencia' => '2026',
+            'ase_mesa' => 2
         ]);
 
         // Persona 3: Asesor Prioritario
@@ -67,7 +69,8 @@ class SecuritySeeder extends Seeder
             'ase_estado' => 'disponible',
             'PERSONA_pers_doc' => '1003',
             'ase_nrocontrato' => 'CONTR-2024-003',
-            'ase_vigencia' => '2026'
+            'ase_vigencia' => '2026',
+            'ase_mesa' => 3
         ]);
 
         // Persona 4: Coordinador

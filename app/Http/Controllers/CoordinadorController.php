@@ -175,7 +175,7 @@ class CoordinadorController extends Controller
     {
         $request->validate([
             'ase_id'   => 'required|exists:asesor,ase_id',
-            'nuevo_tipo' => 'required|in:V,G,E',
+            'nuevo_tipo' => 'required|in:G,E',
         ]);
 
         $asesor = Asesor::findOrFail($request->ase_id);
@@ -201,7 +201,7 @@ class CoordinadorController extends Controller
             if ($tipoAtencion !== 'empresario') {
                 $queryAdvisors = \App\Models\Asesor::query();
                 if ($tipoAtencion === 'victimas') {
-                    $queryAdvisors->whereIn('ase_tipo_asesor', ['V', 'G']);
+                    $queryAdvisors->where('ase_tipo_asesor', 'V');
                 } else {
                     $queryAdvisors->where('ase_tipo_asesor', 'G');
                 }
@@ -364,17 +364,33 @@ class CoordinadorController extends Controller
                     ];
                 });
 
-            // Cargar jornadas de trabajo de la semana para este asesor
-            $sesionesDetalle = SesionAsesor::where('ASESOR_ase_id', $asesor_id_filter)
+            // Cargar jornadas de trabajo de la semana para este asesor con pausas
+            $sesionesDetalle = \App\Models\SesionAsesor::with('pausas')
+                ->where('ASESOR_ase_id', $asesor_id_filter)
                 ->whereBetween('ses_inicio', [$startOfWeek, $endOfWeek])
                 ->orderBy('ses_inicio', 'desc')
                 ->get()
-                ->map(function($ses) use ($formatTime, $asesor_id_filter, $startOfWeek, $endOfWeek) {
+                ->map(function($ses) use ($formatTime, $asesor_id_filter) {
                     $fin    = $ses->ses_fin;
                     $inicio = $ses->ses_inicio;
-                    $duracion = $fin
-                        ? $formatTime(Carbon::parse($inicio)->diffInSeconds(Carbon::parse($fin)))
-                        : 'En curso';
+                    
+                    // Cálculo de duración bruta
+                    $duracionSegundos = $fin 
+                        ? Carbon::parse($inicio)->diffInSeconds(Carbon::parse($fin))
+                        : Carbon::parse($inicio)->diffInSeconds(now());
+                    
+                    // Cálculo de pausas
+                    $totalPausaSegundos = 0;
+                    $tieneAutoPausa = false;
+                    foreach ($ses->pausas as $pausa) {
+                        $pFin = $pausa->pau_fin ?? now();
+                        $totalPausaSegundos += Carbon::parse($pausa->pau_inicio)->diffInSeconds(Carbon::parse($pFin));
+                        if ($pausa->pau_motivo === 'Inactividad Automática') {
+                            $tieneAutoPausa = true;
+                        }
+                    }
+
+                    $duracionEfectiva = $duracionSegundos - $totalPausaSegundos;
 
                     // Contar atenciones realizadas dentro de esta jornada
                     $finParaQuery = $fin ?? now();
@@ -384,11 +400,14 @@ class CoordinadorController extends Controller
                         ->count();
 
                     return [
-                        'inicio'     => Carbon::parse($inicio)->format('d/m/Y h:i A'),
-                        'fin'        => $fin ? Carbon::parse($fin)->format('d/m/Y h:i A') : null,
-                        'duracion'   => $duracion,
-                        'atenciones' => $atenciones,
-                        'activa'     => $fin === null,
+                        'inicio'      => Carbon::parse($inicio)->format('d/m/Y h:i A'),
+                        'fin'         => $fin ? Carbon::parse($fin)->format('d/m/Y h:i A') : null,
+                        'duracion'    => $formatTime($duracionSegundos),
+                        'pausa'       => $formatTime($totalPausaSegundos),
+                        'efectiva'    => $formatTime(max(0, $duracionEfectiva)),
+                        'atenciones'  => $atenciones,
+                        'activa'      => $fin === null,
+                        'auto_pausa'  => $tieneAutoPausa,
                     ];
                 });
         }
@@ -422,7 +441,7 @@ class CoordinadorController extends Controller
             'pers_apellidos' => 'required|string',
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6',
-            'ase_tipo_asesor'=> 'required|in:G,V,E',
+            'ase_tipo_asesor'=> 'required|in:G,E',
             'ase_mesa'       => [
                 'required',
                 'integer',

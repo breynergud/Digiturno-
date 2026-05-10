@@ -16,7 +16,7 @@ class InactividadCoordinador
         if (session()->has('coor_id')) {
             $lastActivity = session('coor_ultima_actividad');
             $currentTime = time();
-            $timeout = 300; // 5 minutos en segundos
+            $timeout = 600; // 10 minutos en segundos
 
             if ($lastActivity && ($currentTime - $lastActivity > $timeout)) {
                 session()->forget(['coor_id', 'coor_ultima_actividad']);

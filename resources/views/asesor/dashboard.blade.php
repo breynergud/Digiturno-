@@ -89,7 +89,7 @@
             </div>
 
             {{-- Logout --}}
-            <form method="POST" action="{{ route('asesor.logout') }}">
+            <form method="POST" action="{{ route('asesor.logout') }}" onsubmit="confirmarLogoutManual(event)">
                 @csrf
                 <button type="submit" class="btn-logout text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl shadow-sm">
                     Cerrar Sesión
@@ -266,6 +266,7 @@
             </div>
 
             {{-- Sección: Turnos VÍCTIMAS --}}
+            @if($asesor->ase_tipo_asesor === 'V')
             <div class="glass rounded-[32px] p-6 border-b-4 border-red-600">
                 <div class="flex items-center justify-between mb-5">
                     <div>
@@ -283,6 +284,7 @@
                     {{-- Se puebla por JS --}}
                 </div>
             </div>
+            @endif
 
             {{-- Sección: Turnos GENERALES --}}
             <div class="glass rounded-[32px] p-6 flex-1 border-b-4 border-slate-300">
@@ -432,13 +434,32 @@
                     Su Sesión se va a cerrar en un minuto. Cancelar para seguir trabajando o Aceptar para cerrar ahora
                 </p>
                 <div class="flex gap-4">
-                    <button id="btn-timeout-aceptar" onclick="logoutAhora()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-red-900">
+                    <button id="btn-timeout-aceptar" onclick="logoutAhora(true)" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl text-lg uppercase transition-all shadow-lg border-b-4 border-red-900">
                         ACEPTAR (<span id="timeout-countdown">60</span>)
                     </button>
                     <button onclick="continuarSesion()" class="flex-1 bg-gray-50 hover:bg-gray-100 text-slate-900 font-bold py-4 rounded-xl text-lg uppercase transition-colors border border-gray-200">
                         CANCELAR
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL ADVERTENCIA CIERRE MANUAL ────────────────────── -->
+    <div id="modal-logout-manual" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2.5rem] overflow-hidden w-full max-w-md shadow-2xl transform transition-all border border-white/10 animate-in zoom-in duration-300">
+            <div class="h-2 bg-red-600 w-full"></div>
+            <div class="p-10 text-center">
+                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h3 class="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter">Turno de Trabajo Activo</h3>
+                <p class="text-slate-500 font-medium mb-8 leading-relaxed">
+                    Aún tienes un turno de trabajo iniciado. Para cerrar sesión, primero debes <b>Finalizar Turno</b> usando el botón rojo del panel.
+                </p>
+                <button onclick="cerrarModalLogoutManual()" class="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-lg border-b-4 border-slate-700">
+                    ENTENDIDO
+                </button>
             </div>
         </div>
     </div>
@@ -519,7 +540,7 @@
                 if (!res) return;
                 const data = await res.json();
                 if (!res.ok) { showToast(data.error || 'Error al iniciar turno.', 'error'); return; }
-                actualizarEstadoUI('disponible', data.ses_inicio);
+                actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
                 showToast('Turno de trabajo iniciado. ¡Listo para atender!', 'success');
                 await refreshPollData();
             } catch (e) { showToast('Error de conexión.', 'error'); }
@@ -587,6 +608,8 @@
 
         // ── Variables de turno de trabajo ───────────────────────
         let sesInicioTimestamp = null; // Timestamp ISO de inicio de turno
+        let totalPausaMs = 0;          // Total de tiempo en pausa (ms)
+        let enPausa = false;          // ¿Está actualmente en pausa?
         let timerInterval = null;
 
         function formatDuracion(segundos) {
@@ -598,26 +621,39 @@
             return `${s}s`;
         }
 
-        function iniciarTimerTurno(isoInicio) {
+        function iniciarTimerTurno(isoInicio, pausaMs = 0, isPaused = false) {
+            if (!isoInicio) {
+                detenerTimerTurno();
+                return;
+            }
             sesInicioTimestamp = new Date(isoInicio).getTime();
+            totalPausaMs = pausaMs;
+            enPausa = isPaused;
+
             const timerEl = document.getElementById('turno-timer-texto');
             clearInterval(timerInterval);
             if (!timerEl) return;
+
             timerInterval = setInterval(() => {
-                const diff = Math.floor((Date.now() - sesInicioTimestamp) / 1000);
-                timerEl.innerText = formatDuracion(diff);
+                if (enPausa) return; // Congelar visualmente si está en pausa
+
+                const now = Date.now();
+                const diffSec = Math.floor((now - sesInicioTimestamp - totalPausaMs) / 1000);
+                timerEl.innerText = formatDuracion(Math.max(0, diffSec));
             }, 1000);
         }
 
         function detenerTimerTurno() {
             clearInterval(timerInterval);
             sesInicioTimestamp = null;
+            totalPausaMs = 0;
+            enPausa = false;
             const timerEl = document.getElementById('turno-timer-texto');
             if (timerEl) timerEl.innerText = '—';
         }
 
         // ── Actualizar UI de estado ────────────────────────────────
-        function actualizarEstadoUI(estado, sesInicio = null) {
+        function actualizarEstadoUI(estado, sesInicio = null, pausaMs = 0, isPaused = false) {
             const badge      = document.getElementById('estado-badge');
             const textoEl    = document.getElementById('estado-texto');
             const btnAceptar = document.getElementById('btn-aceptar');
@@ -626,6 +662,9 @@
             const btnTurno   = document.getElementById('btn-turno');
             const timerDiv   = document.getElementById('turno-timer');
             const cardInactivo = document.getElementById('card-inactivo');
+
+            enPausa = isPaused; // Sincronizar estado de pausa
+            totalPausaMs = pausaMs;
 
             const labels = { disponible: 'Disponible', en_espera: 'En Espera', ocupado: 'Ocupado', inactivo: 'Inactivo' };
             textoEl.innerText = labels[estado] || estado;
@@ -679,9 +718,9 @@
                     btnTurno.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10h6v4H9z"/></svg> ■ Finalizar Turno';
                     if (timerDiv) timerDiv.classList.remove('hidden');
                     if (cardInactivo) cardInactivo.classList.add('hidden');
-                    if (sesInicio && sesInicio !== sesInicioTimestamp) {
-                        iniciarTimerTurno(sesInicio);
-                    }
+                    
+                    // Reiniciar timer con datos de pausa
+                    iniciarTimerTurno(sesInicio, pausaMs, isPaused);
                 }
             }
         }
@@ -721,7 +760,14 @@
                     data.persona.nombres + ' · Doc: ' + data.persona.documento;
             }
             document.getElementById('card-turno-actual').classList.remove('hidden');
-            actualizarEstadoUI('ocupado');
+            
+            // Actualizar estado usando los datos completos si vienen, sino forzar 'ocupado'
+            if (data.estado) {
+                actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
+            } else {
+                actualizarEstadoUI('ocupado');
+            }
+
             showToast('Turno ' + data.codigo_turno + ' aceptado.', 'success');
             refreshPollData();
         }
@@ -779,7 +825,13 @@
                 }
 
                 document.getElementById('card-turno-actual').classList.add('hidden');
-                actualizarEstadoUI('disponible');
+                
+                if (data.estado) {
+                    actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
+                } else {
+                    actualizarEstadoUI('disponible');
+                }
+
                 showToast('Atención finalizada correctamente.', 'success');
                 await refreshPollData();
 
@@ -810,9 +862,9 @@
                     return;
                 }
 
-                actualizarEstadoUI(data.ase_estado);
-                const msg = data.ase_estado === 'en_espera' ? 'Ahora estás en espera.' : 'Actividad reanudada.';
-                showToast(msg, data.ase_estado === 'en_espera' ? 'warn' : 'success');
+                actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
+                const msg = data.estado === 'en_espera' ? 'Ahora estás en espera.' : 'Actividad reanudada.';
+                showToast(msg, data.estado === 'en_espera' ? 'warn' : 'success');
 
             } catch (e) {
                 showToast('Error de conexión.', 'error');
@@ -847,6 +899,9 @@
 
                 if (res.status === 401) { location.href = '{{ route("asesor.login") }}'; return; }
                 const data = await res.json();
+
+                // 1. Actualizar ESTADO GENERAL
+                actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
 
                 // Detección de cambio de perfil remoto
                 if (data.tipo_asesor && data.tipo_asesor !== currentTipoAsesor) {
@@ -896,30 +951,32 @@
 
                 // 2. Actualizar COLA VÍCTIMAS
                 const listaVictimas = document.getElementById('lista-cola-victimas');
-                const colaVictimas = data.cola_victimas || [];
-                document.getElementById('cola-victimas-count').innerText = colaVictimas.length;
+                if (listaVictimas) {
+                    const colaVictimas = data.cola_victimas || [];
+                    document.getElementById('cola-victimas-count').innerText = colaVictimas.length;
 
-                if (colaVictimas.length === 0) {
-                    listaVictimas.innerHTML = `
-                        <div class="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
-                            <p class="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
-                        </div>`;
-                } else {
-                    listaVictimas.innerHTML = colaVictimas.map(t => {
-                        const disabled = !t.habilitado;
-                        return `
-                        <div class="flex items-center justify-between ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-red-50 border border-red-100'} p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
-                            <div>
-                                <p class="${disabled ? 'text-gray-400' : 'text-red-600'} text-[10px] font-black uppercase tracking-widest">Víctimas${disabled ? ' · Sin disponibilidad' : ''}</p>
-                                <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
-                            </div>
-                            <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
-                                ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
-                                class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-red-800'}">
-                                ATENDER
-                            </button>
-                        </div>`;
-                    }).join('');
+                    if (colaVictimas.length === 0) {
+                        listaVictimas.innerHTML = `
+                            <div class="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                                <p class="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Sin turnos víctimas</p>
+                            </div>`;
+                    } else {
+                        listaVictimas.innerHTML = colaVictimas.map(t => {
+                            const disabled = !t.habilitado;
+                            return `
+                            <div class="flex items-center justify-between ${disabled ? 'bg-gray-50 border border-gray-200 opacity-60' : 'bg-red-50 border border-red-100'} p-4 rounded-2xl shadow-sm animate-in fade-in zoom-in duration-300">
+                                <div>
+                                    <p class="${disabled ? 'text-gray-400' : 'text-red-600'} text-[10px] font-black uppercase tracking-widest">Víctimas${disabled ? ' · Sin disponibilidad' : ''}</p>
+                                    <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
+                                </div>
+                                <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
+                                    ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
+                                    class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-red-800'}">
+                                    ATENDER
+                                </button>
+                            </div>`;
+                        }).join('');
+                    }
                 }
 
                 // 3. Actualizar COLA GENERAL (Asignada a mí)
@@ -940,7 +997,14 @@
                                 <p class="${disabled ? 'text-gray-400' : 'text-slate-400'} text-[10px] font-bold uppercase tracking-wider">General${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
-                            <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                            <div class="flex items-center gap-3">
+                                <p class="text-slate-500 text-xs font-semibold">${t.hora ? t.hora.substring(11,16) : ''}</p>
+                                <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
+                                    ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
+                                    class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-slate-700 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-slate-900'}">
+                                    ATENDER
+                                </button>
+                            </div>
                         </div>`;
                     }).join('');
                 }
@@ -1005,7 +1069,7 @@
                 // Actualizar cronómetro de turno con datos del servidor
                 if (data.ses_inicio) {
                     if (!sesInicioTimestamp) {
-                        iniciarTimerTurno(data.ses_inicio);
+                        iniciarTimerTurno(data.ses_inicio, data.total_pausa_ms, data.en_pausa);
                         const timerDiv = document.getElementById('turno-timer');
                         if (timerDiv) timerDiv.classList.remove('hidden');
                         const cardInactivo = document.getElementById('card-inactivo');
@@ -1144,12 +1208,12 @@
             if (e.target === this) cerrarModal();
         });
 
-        // ── Inactividad (15 min) ───────────────────────────────────
+        // ── Inactividad (5 min total) ──────────────────────────────
         let lastActivityTimestamp = Date.now();
         let countdownTime = 60;
         let countdownInterval = null;
         let heartbeatInterval = null;
-        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos (el aviso dura 1 min adicional)
+        const IDLE_LIMIT = 9 * 60 * 1000; // 9 minutos en milisegundos (el aviso dura 1 min adicional)
 
         function resetIdleTimer() {
             if (document.getElementById('modal-timeout').classList.contains('hidden')) {
@@ -1228,10 +1292,12 @@
             }
         }
 
-        function logoutAhora() {
+        function logoutAhora(porInactividad = false) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '{{ route("asesor.logout") }}';
+            let action = '{{ route("asesor.logout") }}';
+            if (porInactividad) action += '?inactivity=1';
+            form.action = action;
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = '_token';
@@ -1239,6 +1305,22 @@
             form.appendChild(csrfInput);
             document.body.appendChild(form);
             form.submit();
+        }
+
+        function confirmarLogoutManual(e) {
+            const estadoActual = document.getElementById('estado-texto').innerText.trim().toLowerCase();
+            if (estadoActual !== 'inactivo') {
+                e.preventDefault();
+                const modal = document.getElementById('modal-logout-manual');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function cerrarModalLogoutManual() {
+            const modal = document.getElementById('modal-logout-manual');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
     </script>

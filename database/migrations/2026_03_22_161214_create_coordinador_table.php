@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id('coor_id');
             $table->string('coor_vigencia', 45)->nullable();
             $table->string('coor_correo', 45)->unique()->nullable();
-            $table->string('coor_password', 45)->nullable();
+            $table->string('coor_password', 255)->nullable();
             $table->enum('coor_estado', ['disponible', 'ocupado'])->default('disponible');
             $table->integer('PERSONA_pers_doc');
             

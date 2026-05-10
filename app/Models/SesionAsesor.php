@@ -28,4 +28,9 @@ class SesionAsesor extends Model
     {
         return $this->belongsTo(Asesor::class, 'ASESOR_ase_id', 'ase_id');
     }
+
+    public function pausas()
+    {
+        return $this->hasMany(PausaAsesor::class, 'SESION_ses_id', 'ses_id');
+    }
 }

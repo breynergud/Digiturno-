@@ -12,7 +12,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Clean up orphaned rows before adding foreign keys
+        // 1. Drop existing foreign keys first to allow changing column types
+        Schema::table('asesor', function (Blueprint $table) {
+            $table->dropForeign(['PERSONA_pers_doc']);
+        });
+        Schema::table('coordinador', function (Blueprint $table) {
+            $table->dropForeign(['PERSONA_pers_doc']);
+        });
+        Schema::table('usuario', function (Blueprint $table) {
+            $table->dropForeign(['PERSONA_pers_doc']);
+        });
+
+        // 2. Clean up orphaned rows before re-adding foreign keys
         DB::table('asesor')->whereNotIn('PERSONA_pers_doc', function($query) {
             $query->select('pers_doc')->from('persona');
         })->delete();
@@ -25,12 +36,12 @@ return new class extends Migration
             $query->select('pers_doc')->from('persona');
         })->delete();
 
-        // Change the primary key type
+        // 3. Change the primary key type in persona table
         Schema::table('persona', function (Blueprint $table) {
             $table->bigInteger('pers_doc')->change();
         });
 
-        // Change foreign keys type and re-add constraints with unique names
+        // 4. Change foreign keys type and re-add constraints
         Schema::table('asesor', function (Blueprint $table) {
             $table->bigInteger('PERSONA_pers_doc')->change();
             $table->foreign('PERSONA_pers_doc', 'fk_asesor_persona_doc_v2')->references('pers_doc')->on('persona');
@@ -41,10 +52,6 @@ return new class extends Migration
         });
         Schema::table('usuario', function (Blueprint $table) {
             $table->bigInteger('PERSONA_pers_doc')->change();
-            // Wrap in try-catch or skip if already created from previous crash? 
-            // Better to use a unique name, but wait, if previous run created a constraint for usuario, changing it again might fail.
-            // Let's drop the previous one we might have created:
-            // $table->dropForeign(['PERSONA_pers_doc']); // This would fail if it doesn't exist.
             $table->foreign('PERSONA_pers_doc', 'fk_usuario_persona_doc_v2')->references('pers_doc')->on('persona');
         });
     }

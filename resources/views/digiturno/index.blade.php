@@ -144,10 +144,10 @@
                         <div class="w-full">
                             <label class="block text-[10px] font-black text-ape-gray uppercase tracking-widest mb-3 px-1">Número de Documento</label>
                             <input type="text" name="numero_documento" id="input_doc" required 
-                                inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                inputmode="text" oninput="this.value = this.value.replace(/[^0-9\.\,\-\s]/g, ''); hideError();"
                                 onclick="setActiveInput('input_doc')"
                                 onfocus="setActiveInput('input_doc')"
-                                placeholder="Toque los números" 
+                                placeholder="Toque los números y símbolos" 
                                 class="w-full bg-gray-50 border-2 border-gray-100 rounded-[1.5rem] px-6 py-6 text-2xl font-black text-ape-blue focus:border-ape-blue outline-none transition-all placeholder:text-gray-300 placeholder:font-bold">
                             <p id="doc-error" class="text-red-500 text-[10px] font-black mt-2 hidden uppercase tracking-widest px-1"></p>
                         </div>
@@ -172,11 +172,13 @@
                         <button type="button" onclick="pressKey('7')" class="key-btn">7</button>
                         <button type="button" onclick="pressKey('8')" class="key-btn">8</button>
                         <button type="button" onclick="pressKey('9')" class="key-btn">9</button>
+                        <button type="button" onclick="pressKey('.')" class="key-btn font-bold">.</button>
+                        <button type="button" onclick="pressKey('0')" class="key-btn">0</button>
+                        <button type="button" onclick="pressKey('-')" class="key-btn font-bold">-</button>
+                        <button type="button" onclick="clearKeys()" class="key-btn col-span-2 text-gray-400 text-sm">Borrar Todo</button>
                         <button type="button" onclick="deleteKey()" class="key-btn text-red-500 bg-red-50 border-red-100">
                              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
                         </button>
-                        <button type="button" onclick="pressKey('0')" class="key-btn">0</button>
-                        <button type="button" onclick="clearKeys()" class="key-btn text-gray-400 text-sm">Borrar</button>
                     </div>
 
                     <button type="submit" id="submit-btn" class="w-full bg-[#10069f] hover:bg-[#0a0455] text-white font-black py-6 rounded-[1.5rem] shadow-xl shadow-blue-200 transition-all transform active:scale-95 uppercase tracking-[0.2em] text-sm flex justify-center items-center mt-6 border-b-4 border-[#0a0455]">
@@ -229,7 +231,7 @@
         
         function pressKey(num) {
             const input = document.getElementById(focusedInput);
-            if (input.value.length < 12) {
+            if (input.value.length < 20) {
                 input.value += num;
                 hideError();
             }
@@ -359,8 +361,10 @@
                 return;
             }
 
-            if (doc.length < requiredLen) {
-                errorMsg.innerText = `NÚMERO INVÁLIDO - COLOQUE UN NÚMERO VÁLIDO (${requiredLen} DÍGITOS)`;
+            // Validar que al menos tenga 5 números tras quitar símbolos
+            const digitsOnly = doc.replace(/\D/g, '');
+            if (digitsOnly.length < 5) {
+                errorMsg.innerText = "NÚMERO INVÁLIDO - MUY CORTO";
                 errorMsg.classList.remove('hidden');
                 return;
             }

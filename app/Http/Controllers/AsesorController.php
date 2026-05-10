@@ -125,11 +125,42 @@ class AsesorController extends Controller
 
     public function logout(Request $request)
     {
-        // Cerrar turno de trabajo automáticamente si estaba activo
         $asesorId = session('asesor_id');
+        
         if ($asesorId) {
-            $this->cerrarTurnoTrabajo($asesorId);
+            $asesor = Asesor::find($asesorId);
+            if ($asesor && $request->has('inactivity')) {
+                // Si es por inactividad, NO cerramos el turno, solo lo ponemos en PAUSA
+                DB::transaction(function() use ($asesor) {
+                    $asesor->update(['ase_estado' => 'en_espera']);
+                    
+                    $sesion = SesionAsesor::where('ASESOR_ase_id', $asesor->ase_id)
+                        ->whereNull('ses_fin')
+                        ->latest('ses_id')
+                        ->first();
+                        
+                    if ($sesion) {
+                        // Crear pausa por inactividad si no hay una activa
+                        $pausaActiva = \App\Models\PausaAsesor::where('SESION_ses_id', $sesion->ses_id)
+                            ->whereNull('pau_fin')
+                            ->first();
+                            
+                        if (!$pausaActiva) {
+                            \App\Models\PausaAsesor::create([
+                                'pau_inicio'    => now(),
+                                'SESION_ses_id' => $sesion->ses_id,
+                                'pau_motivo'    => 'Inactividad Automática'
+                            ]);
+                        }
+                    }
+                });
+            } else if ($asesorId) {
+                // Si es un logout manual, el comportamiento por defecto es cerrar el turno si existía
+                // Pero el frontend ahora advertirá antes de llegar aquí.
+                $this->cerrarTurnoTrabajo($asesorId);
+            }
         }
+
         $request->session()->forget(['asesor_id', 'asesor_tipo', 'asesor_ultima_actividad']);
         return redirect()->route('asesor.login');
     }
@@ -172,43 +203,8 @@ class AsesorController extends Controller
             return response()->json(['error' => 'no_session'], 401);
         }
 
-        $asesor   = Asesor::findOrFail($asesorId);
-        $tipo     = $asesor->ase_tipo_asesor;
-        
-        $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
-        
-        // Separar por tipo para la interfaz
-        $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
-        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => in_array($t['tipo'], ['Prioritario', 'Especial'])));
-        $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
-        $colaEmpresario  = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Empresario'));
-
-        // Hay turnos del tipo principal pendientes?
-        $tipoPrincipal   = $this->tipoPrincipal($tipo);
-        $hayPrincipales  = !empty(array_filter($colaPersonal, fn($t) => $t['tipo'] === $tipoPrincipal && $t['habilitado']));
-
-        $historial = $this->getHistorialHoy($asesor);
-
-        // Obtener sesión de trabajo activa
-        $sesionActiva = SesionAsesor::where('ASESOR_ase_id', $asesorId)
-            ->whereNull('ses_fin')
-            ->orderBy('ses_id', 'desc')
-            ->first();
-
-        return response()->json([
-            'estado'            => $asesor->ase_estado,
-            'turno_actual_id'   => $asesor->ase_turno_actual_id,
-            'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
-            'tipo_asesor'       => $tipo,
-            'hay_principales'   => $hayPrincipales,
-            'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas) + count($colaEmpresario),
-            'cola_prioritaria'  => $colaPrioritaria,
-            'cola_general'      => $colaGeneral,
-            'cola_victimas'     => $colaVictimas,
-            'cola_empresario'   => $colaEmpresario,
-            'historial'         => $historial,
-            'ses_inicio'        => $sesionActiva ? $sesionActiva->ses_inicio->toIso8601String() : null,
-        ]);
+        $asesor = Asesor::findOrFail($asesorId);
+        return $this->getFullStatusResponse($asesor);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -350,11 +346,7 @@ class AsesorController extends Controller
 
         $asesor->update(['ase_estado' => 'disponible']);
 
-        return response()->json([
-            'success'    => true,
-            'ase_estado' => 'disponible',
-            'ses_inicio' => $sesion->ses_inicio->toIso8601String(),
-        ]);
+        return $this->getFullStatusResponse($asesor);
     }
 
     public function finalizarTurno(Request $request)
@@ -379,10 +371,7 @@ class AsesorController extends Controller
 
         $this->cerrarTurnoTrabajo($asesorId);
 
-        return response()->json([
-            'success'    => true,
-            'ase_estado' => 'inactivo',
-        ]);
+        return $this->getFullStatusResponse($asesor);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -417,7 +406,6 @@ class AsesorController extends Controller
                 $turno = TurnoUnificado::where('tur_id', $request->tur_id)
                     ->whereNotIn('tur_id', Atencion::pluck('TURNO_tur_id'))
                     ->whereIn('tur_tipo', $tiposPermitidos)
-                    ->where('tur_mesa', $mesa) // Estricto a mi mesa
                     ->first(); // El asesor eligió este turno explícitamente
             }
 
@@ -498,7 +486,7 @@ class AsesorController extends Controller
             'ase_turno_actual_tipo' => null,
         ]);
 
-        return response()->json(['success' => true, 'ase_estado' => 'disponible']);
+        return $this->getFullStatusResponse($asesor);
     }
 
     public function toggleEspera()
@@ -515,14 +503,97 @@ class AsesorController extends Controller
         }
 
         $nuevoEstado = $asesor->ase_estado === 'disponible' ? 'en_espera' : 'disponible';
-        $asesor->update(['ase_estado' => $nuevoEstado]);
+        
+        DB::transaction(function() use ($asesor, $nuevoEstado) {
+            $asesor->update(['ase_estado' => $nuevoEstado]);
 
-        return response()->json(['success' => true, 'ase_estado' => $nuevoEstado]);
+            // Obtener la sesión activa
+            $sesion = SesionAsesor::where('ASESOR_ase_id', $asesor->ase_id)
+                ->whereNull('ses_fin')
+                ->latest('ses_id')
+                ->first();
+
+            if ($sesion) {
+                if ($nuevoEstado === 'en_espera') {
+                    // Iniciar pausa
+                    \App\Models\PausaAsesor::create([
+                        'pau_inicio'    => now(),
+                        'SESION_ses_id' => $sesion->ses_id,
+                        'pau_motivo'    => 'Descanso/Pausa'
+                    ]);
+                } else {
+                    // Finalizar última pausa pendiente
+                    $pausa = \App\Models\PausaAsesor::where('SESION_ses_id', $sesion->ses_id)
+                        ->whereNull('pau_fin')
+                        ->latest('pau_id')
+                        ->first();
+                    
+                    if ($pausa) {
+                        $pausa->update(['pau_fin' => now()]);
+                    }
+                }
+            }
+        });
+
+        return $this->getFullStatusResponse($asesor);
     }
 
     // ─────────────────────────────────────────────────────────────
     //  HELPERS PRIVADOS
     // ─────────────────────────────────────────────────────────────
+
+    private function getFullStatusResponse($asesor)
+    {
+        $asesorId = $asesor->ase_id;
+        $tipo     = $asesor->ase_tipo_asesor;
+        
+        $colaPersonal = $this->getColaParaTipo($tipo, $asesorId);
+        
+        // Separar por tipo para la interfaz
+        $colaGeneral     = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'General'));
+        $colaPrioritaria = array_values(array_filter($colaPersonal, fn($t) => in_array($t['tipo'], ['Prioritario', 'Especial'])));
+        $colaVictimas    = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Victimas'));
+        $colaEmpresario  = array_values(array_filter($colaPersonal, fn($t) => $t['tipo'] === 'Empresario'));
+
+        // Hay turnos del tipo principal pendientes?
+        $tipoPrincipal   = $this->tipoPrincipal($tipo);
+        $hayPrincipales  = !empty(array_filter($colaPersonal, fn($t) => $t['tipo'] === $tipoPrincipal && $t['habilitado']));
+
+        $historial = $this->getHistorialHoy($asesor);
+
+        // Obtener sesión de trabajo activa con pausas
+        $sesionActiva = SesionAsesor::with('pausas')
+            ->where('ASESOR_ase_id', $asesorId)
+            ->whereNull('ses_fin')
+            ->orderBy('ses_id', 'desc')
+            ->first();
+
+        $totalPausaSegundos = 0;
+        if ($sesionActiva) {
+            foreach ($sesionActiva->pausas as $pausa) {
+                $fin = $pausa->pau_fin ?? now();
+                $totalPausaSegundos += $pausa->pau_inicio->diffInSeconds($fin);
+            }
+        }
+
+        return response()->json([
+            'success'           => true,
+            'estado'            => $asesor->ase_estado,
+            'turno_actual_id'   => $asesor->ase_turno_actual_id,
+            'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
+            'tipo_asesor'       => $tipo,
+            'hay_principales'   => $hayPrincipales,
+            'cola_count'        => count($colaGeneral) + count($colaPrioritaria) + count($colaVictimas) + count($colaEmpresario),
+            'cola_prioritaria'  => $colaPrioritaria,
+            'cola_general'      => $colaGeneral,
+            'cola_victimas'     => $colaVictimas,
+            'cola_empresario'   => $colaEmpresario,
+            'historial'         => $historial,
+            'ses_inicio'        => $sesionActiva ? $sesionActiva->ses_inicio->toIso8601String() : null,
+            'total_pausa_ms'    => $totalPausaSegundos * 1000,
+            'en_pausa'          => $asesor->ase_estado === 'en_espera',
+        ]);
+    }
 
     private function mapearTipo(string $tipoLetra): string
     {
@@ -534,7 +605,7 @@ class AsesorController extends Controller
         };
     }
 
-    /** Obtiene los turnos pendientes asignados a la mesa de este asesor */
+    /** Obtiene los turnos pendientes que este asesor puede atender */
     private function getColaParaTipo(string $tipo, int $asesorId): array
     {
         $asesor = Asesor::find($asesorId);
@@ -543,74 +614,34 @@ class AsesorController extends Controller
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipo);
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         $hoy = today();
-        $mesa = $asesor->ase_mesa ?? 0;
-
-        // Para todos los tipos: mostrar principal habilitado, secundarios deshabilitados si hay principales
         $tipoPrincipal = $this->tipoPrincipal($tipo);
-        $tiposSecundarios = array_values(array_filter($tiposPermitidos, fn($t) => $t !== $tipoPrincipal));
 
-        // Tipo principal: global
-        $principales = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', $tipoPrincipal)
+        // Obtener todos los turnos permitidos en un solo paso
+        // habilitados todos para permitir selección manual libre según la nueva jerarquía
+        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
+            ->whereIn('tur_tipo', $tiposPermitidos)
             ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id')
+            ->orderByRaw("FIELD(tur_tipo, 'Empresario', 'Victimas', 'Prioritario', 'General')")
+            ->orderBy('tur_id', 'asc')
             ->get()
             ->map(fn($t) => [
                 'id'        => $t->tur_id,
                 'codigo'    => $t->tur_numero,
                 'hora'      => $t->tur_hora_fecha,
                 'tipo'      => $t->tur_tipo,
-                'principal' => true,
-                'habilitado'=> true,
+                'principal' => ($t->tur_tipo === $tipoPrincipal),
+                'habilitado'=> true, // Siempre habilitado para permitir desbordamiento y cumplimiento de prioridad
             ])->toArray();
-
-        $hayPrincipales = !empty($principales);
-
-        // Secundarios: siempre visibles, pero deshabilitados si hay principales
-        $secundariosArr = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->whereIn('tur_tipo', $tiposSecundarios)
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General', 'Empresario')")
-            ->orderBy('tur_id')
-            ->get()
-            ->map(fn($t) => [
-                'id'        => $t->tur_id,
-                'codigo'    => $t->tur_numero,
-                'hora'      => $t->tur_hora_fecha,
-                'tipo'      => $t->tur_tipo,
-                'principal' => false,
-                'habilitado'=> !$hayPrincipales, // solo habilitado si no hay principales
-            ])->toArray();
-
-        return array_merge($principales, $secundariosArr);
     }
 
     private function getSiguienteTurno(string $tipoAsesor, Asesor $asesor)
     {
         $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
         $hoy = today();
-        $mesa = $asesor->ase_mesa ?? 0;
-        $tipoPrincipal = $this->tipoPrincipal($tipoAsesor);
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
 
-        // 1. Primero: turno del tipo principal en mi mesa
-        $turno = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', $tipoPrincipal)
-            ->where('tur_mesa', $mesa)
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id', 'asc')
-            ->first();
-        if ($turno) return $turno;
-
-        // 2. Tipo principal global (desbordamiento de mesa)
-        $turno = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', $tipoPrincipal)
-            ->whereDate('tur_hora_fecha', $hoy)
-            ->orderBy('tur_id', 'asc')
-            ->first();
-        if ($turno) return $turno;
-
-        // 3. Inanición: General con más de 35 min esperando (solo para G)
+        // 1. Inanición: General con más de 35 min esperando (solo para G)
+        // Se mantiene como máxima prioridad para evitar colas infinitas en General
         if ($tipoAsesor === 'G') {
             $turnoCritico = TurnoUnificado::whereNotIn('tur_id', $atendidos)
                 ->where('tur_tipo', 'General')
@@ -621,11 +652,12 @@ class AsesorController extends Controller
             if ($turnoCritico) return $turnoCritico;
         }
 
-        // 4. Fallback: cualquier tipo permitido (sin importar mesa)
+        // 2. Jerarquía de Turnos (Global): Empresario > Victimas > Prioritario > General
+        // El sistema asigna el tipo más importante disponible entre los permitidos para el asesor
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
             ->whereDate('tur_hora_fecha', $hoy)
-            ->orderByRaw("FIELD(tur_tipo, 'Victimas', 'Prioritario', 'General', 'Empresario')")
+            ->orderByRaw("FIELD(tur_tipo, 'Empresario', 'Victimas', 'Prioritario', 'General')")
             ->orderBy('tur_id', 'asc')
             ->first();
     }
@@ -634,9 +666,8 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V'  => ['Victimas', 'Prioritario', 'General', 'Empresario'],
-            'G'  => ['General', 'Prioritario', 'Victimas', 'Empresario'],
-            'E'  => ['Empresario', 'General', 'Prioritario', 'Victimas'],
-            'GO' => ['General'],
+            'G'  => ['Prioritario', 'General', 'Empresario'],
+            'E'  => ['Empresario', 'Prioritario', 'General'],
             default => ['General'],
         };
     }

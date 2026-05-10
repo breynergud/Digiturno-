@@ -9,39 +9,12 @@ use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Http\Requests\StoreTurnoRequest;
 
 class TurnoController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreTurnoRequest $request)
     {
-        $request->validate([
-            'tipo_atencion' => 'required|string',
-            'pers_tipodoc' => 'required|string',
-            'numero_documento' => [
-                'required',
-                'numeric',
-                function ($attribute, $value, $fail) use ($request) {
-                    $tipo = $request->input('pers_tipodoc');
-                    $len = strlen((string)$value);
-                    if ($tipo === 'CC' && ($len < 6 || $len > 10)) {
-                        $fail('La Cédula de Ciudadanía debe tener entre 6 y 10 dígitos.');
-                    }
-                    if ($tipo === 'PPT' && ($len < 7 || $len > 8)) {
-                        $fail('El Permiso de Protección Temporal (PPT) debe tener 7 u 8 dígitos.');
-                    }
-                    if ($tipo === 'NIT' && ($len < 10 || $len > 11)) {
-                        $fail('El NIT debe tener 10 u 11 dígitos (incluyendo el dígito de verificación, sin guiones).');
-                    }
-                },
-            ],
-            'pers_nombres' => 'nullable|string',
-            'pers_apellidos' => 'nullable|string',
-            'telefono' => 'nullable|numeric|digits_between:7,15',
-        ], [
-            'numero_documento.numeric' => 'El número de documento debe ser numérico.',
-            'telefono.numeric' => 'El teléfono debe ser numérico.',
-            'telefono.digits_between' => 'El teléfono debe tener entre 7 y 15 dígitos.',
-        ]);
 
         return DB::transaction(function () use ($request) {
             // 1. Registrar o recuperar la Persona (Solo con documento y tipo)
@@ -124,67 +97,26 @@ class TurnoController extends Controller
                 'USUARIO_user_id' => $usuario->user_id
             ]);
 
-            // 4. Buscar Asesor para Pre-asignación Balanceada
-            $asesorAsignado = null;
-            if ($request->tipo_atencion !== 'empresario') {
-                $queryAdvisors = \App\Models\Asesor::where('ase_estado', '!=', 'inactivo');
-                if ($request->tipo_atencion === 'victimas') {
-                    $queryAdvisors->whereIn('ase_tipo_asesor', ['V', 'G']);
-                } else {
-                    $queryAdvisors->where('ase_tipo_asesor', 'G');
-                }
-                
-                $advisors = $queryAdvisors->get();
+            // 4. No asignar asesor automáticamente (Asignación manual al aceptar)
+            // El turno queda pendiente para que cualquier asesor disponible lo tome.
+            $mesaAsignada = 0;
 
-                // Algoritmo: Menor carga de trabajo (pendientes + activos)
-                $bestAdvisor = null;
-                $minLoad = 999999;
-
-                foreach ($advisors as $adv) {
-                    $load = TurnoUnificado::where('ASESOR_ase_id', $adv->ase_id)
-                        ->where(function($q) {
-                            $q->whereDoesntHave('atencion') // Pendiente
-                              ->orWhereHas('atencion', function($sq) { // O en proceso
-                                  $sq->whereNull('atnc_hora_fin');
-                              });
-                        })
-                        ->whereDate('tur_hora_fecha', today())
-                        ->count();
-
-                    if ($load < $minLoad) {
-                        $minLoad = $load;
-                        $bestAdvisor = $adv;
-                    }
-                }
-                $asesorAsignado = $bestAdvisor;
-            }
-
-            $mesaAsignada = $asesorAsignado ? $asesorAsignado->ase_mesa : 0;
-
-            // 5. Vincular asesor al turno unificado
-            if ($asesorAsignado) {
-                $turnoUnificado->update([
-                    'ASESOR_ase_id' => $asesorAsignado->ase_id,
-                    'tur_mesa'      => $asesorAsignado->ase_mesa,
-                ]);
-            }
-
-            // 6. Mantenemos espejo en la tabla vieja para la TV
+            // 5. Mantenemos espejo en la tabla vieja para la TV
             $turno = Turno::create([
-                'tipo_atencion' => $request->tipo_atencion,
-                'tipo_documento' => $request->pers_tipodoc,
+                'tipo_atencion'    => $request->tipo_atencion,
+                'tipo_documento'   => $request->pers_tipodoc,
                 'numero_documento' => $request->numero_documento,
-                'telefono' => $request->telefono ?: null,
-                'codigo_turno' => $codigo,
-                'mesa' => $mesaAsignada,
+                'telefono'         => $request->telefono ?: null,
+                'codigo_turno'     => $codigo,
+                'mesa'             => $mesaAsignada,
             ]);
 
             return response()->json([
-                'success' => true,
-                'codigo' => $codigo,
-                'tipo' => $request->tipo_atencion,
-                'mesa' => $mesaAsignada,
-                'asignado' => $asesorAsignado ? true : false
+                'success'  => true,
+                'codigo'   => $codigo,
+                'tipo'     => $request->tipo_atencion,
+                'mesa'     => $mesaAsignada,
+                'asignado' => false
             ]);
         });
     }
@@ -210,29 +142,35 @@ class TurnoController extends Controller
      */
     public function pendingTurns()
     {
-        return Cache::remember('tv_pending_turns', 60, function() {
+        return Cache::remember('tv_pending_turns', 5, function() {
             $hoy = today();
 
-            // 1. Turnos que están esperando (asignados pero no aceptados aún)
-            $waitingTurns = TurnoUnificado::whereNotNull('ASESOR_ase_id')
-                ->whereDoesntHave('atencion')
+            // 1. Turnos que están esperando (pendientes de ser tomados o asignados)
+            $waitingTurns = TurnoUnificado::whereDoesntHave('atencion')
                 ->whereDate('tur_hora_fecha', $hoy)
                 ->orderBy('tur_id', 'asc')
                 ->get();
 
-            // 2. Turnos que acaban de ser aceptados (Llamado en curso)
-            $callingTurns = TurnoUnificado::with('atencion')
-                ->whereHas('atencion', function($q) {
-                    $q->whereNull('atnc_hora_fin')
-                      ->where('atnc_hora_inicio', '>=', now()->subSeconds(20));
-                })
-                ->whereDate('tur_hora_fecha', $hoy)
-                ->orderBy('tur_id', 'desc')
-                ->get();
+            // 2. Turnos que están siendo atendidos (en proceso)
+            // Usamos 'with' para evitar error N+1 y ordenamos por ID de forma descendente (los más recientes primero)
+            $attendingTurns = TurnoUnificado::with(['atencion', 'asesor'])
+            ->whereHas('atencion', function($q) {
+                $q->whereNull('atnc_hora_fin');
+            })
+            ->whereDate('tur_hora_fecha', $hoy)
+            ->orderBy('tur_id', 'desc')
+            ->get();
+
+            // 3. Identificamos cuáles de estos son "Llamados Recientes" (últimos 30 seg)
+            $callingTurns = $attendingTurns->filter(function($tu) {
+                return $tu->atencion && $tu->atencion->atnc_hora_inicio >= now()->subSeconds(30);
+            });
 
             // Optimización N+1: Cargar turnos espejo de una vez
-            $codigos = $waitingTurns->pluck('tur_numero')->merge($callingTurns->pluck('tur_numero'))->toArray();
-            $espejos = Turno::whereIn('codigo_turno', $codigos)->whereDate('created_at', $hoy)->get()->keyBy('codigo_turno');
+            $codigos = $waitingTurns->pluck('tur_numero')
+                ->merge($attendingTurns->pluck('tur_numero'))
+                ->toArray();
+            $espejos = Turno::whereIn('codigo_turno', $codigos)->get()->keyBy('codigo_turno');
 
             $result = [
                 'waiting' => [],
@@ -243,16 +181,24 @@ class TurnoController extends Controller
                 if (isset($espejos[$tu->tur_numero])) {
                     $turnoEspejo = $espejos[$tu->tur_numero];
                     $turnoEspejo->is_active = false;
+                    $turnoEspejo->mesa = 0; // Aseguramos que diga ESPERA
                     $result['waiting'][] = $turnoEspejo;
                 }
             }
 
-            foreach ($callingTurns as $tu) {
-                if (isset($espejos[$tu->tur_numero])) {
+            foreach ($attendingTurns as $tu) {
+                // Solo incluimos en la TV los que son "Llamados Recientes" (últimos 30 seg)
+                // Después de ese tiempo, desaparecen de la pantalla para liberar espacio.
+                $isRecent = $tu->atencion && $tu->atencion->atnc_hora_inicio >= now()->subSeconds(30);
+                
+                if ($isRecent && isset($espejos[$tu->tur_numero])) {
                     $turnoEspejo = $espejos[$tu->tur_numero];
                     $turnoEspejo->is_active = true;
+                    $turnoEspejo->mesa = $tu->asesor->ase_mesa ?? 0;
                     $turnoEspejo->atencion_id = $tu->atencion->atnc_id;
                     $turnoEspejo->llamado_at = $tu->atencion->atnc_hora_inicio;
+                    $turnoEspejo->is_recent = true;
+
                     $result['calling'][] = $turnoEspejo;
                 }
             }
