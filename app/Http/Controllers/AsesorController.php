@@ -640,20 +640,9 @@ class AsesorController extends Controller
         $hoy = today();
         $tiposPermitidos = $this->obtenerTiposPermitidos($tipoAsesor);
 
-        // 1. Inanición: General con más de 35 min esperando (solo para G)
-        // Se mantiene como máxima prioridad para evitar colas infinitas en General
-        if ($tipoAsesor === 'G') {
-            $turnoCritico = TurnoUnificado::whereNotIn('tur_id', $atendidos)
-                ->where('tur_tipo', 'General')
-                ->whereDate('tur_hora_fecha', $hoy)
-                ->where('tur_hora_fecha', '<=', now()->subMinutes(35))
-                ->orderBy('tur_id', 'asc')
-                ->first();
-            if ($turnoCritico) return $turnoCritico;
-        }
-
-        // 2. Jerarquía de Turnos (Global): Empresario > Victimas > Prioritario > General
-        // El sistema asigna el tipo más importante disponible entre los permitidos para el asesor
+        // Jerarquía de Turnos (Global): Empresario > Victimas > Prioritario > General
+        // El sistema asigna el tipo más importante disponible entre los permitidos para el asesor,
+        // respetando estrictamente el orden de llegada (FIFO) dentro de cada categoría.
         return TurnoUnificado::whereNotIn('tur_id', $atendidos)
             ->whereIn('tur_tipo', $tiposPermitidos)
             ->whereDate('tur_hora_fecha', $hoy)

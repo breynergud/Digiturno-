@@ -262,15 +262,15 @@ Este documento registra los casos de prueba ejecutados para validar las funciona
 
 ---
 
-## CP-022: Prioridad por Inanición (35 min)
+## CP-022: Prioridad por Jerarquía y FIFO (Validación de Flujo)
 **Prioridad:** Alta  
-**Módulo:** CU-22: Prioridad por Inanición (35 min)  
-**Precondiciones:** Tiempo de espera > 35 minutos.  
-**Descripción:** Elevar automáticamente la prioridad de un turno General si su espera supera el umbral establecido.
+**Módulo:** CU-22: Prioridad por Jerarquía y FIFO  
+**Precondiciones:** Existencia de turnos de diferentes categorías en cola.  
+**Descripción:** Validar que el sistema asigne los turnos respetando primero el rango de prioridad y luego el orden de llegada (FIFO).
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Turno G con 36 min de espera | El sistema lo asigna antes que otros turnos de menor espera. | El sistema antepone silenciosamente estos turnos para garantizar la atención oportuna. | **Pasa** |
+| Turno G (35 min) vs Turno P (1 min) | El sistema asigna primero el Turno P por su mayor jerarquía, a pesar del tiempo de espera del Turno G. | El sistema respeta estrictamente la jerarquía de categorías y el orden FIFO interno. | **Pasa** |
 
 ---
 

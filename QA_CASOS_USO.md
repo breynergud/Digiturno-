@@ -384,17 +384,22 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 
 ---
 
-## CU-22: Prioridad por Inanición (35 min)
+## CU-22: Prioridad por Jerarquía y FIFO
 **Actor:** Sistema  
-**Descripción:** Eleva automáticamente la prioridad de un turno general si ha superado el tiempo de espera crítico.  
-**Precondiciones:** Tiempo de espera superior a 35 minutos.
+**Descripción:** Garantiza que los turnos se atiendan respetando estrictamente el nivel de prioridad y el orden de llegada.  
+**Precondiciones:** Existencia de turnos en cola.
 
 ### Flujo Principal:
-1. El sistema chequea los tiempos de espera de la cola general (`G`) en cada petición de 'Llamar Siguiente'.
-2. Si detecta un turno con más de 35 min, el sistema lo antepone a cualquier otro turno prioritario (excepto Empresarios).
-3. La asignación es silenciosa: no cambia el código pero garantiza el llamado inmediato.
+1. El asesor presiona **'Llamar Siguiente'**.
+2. El sistema filtra los turnos según la jerarquía establecida:
+    - **Nivel 1:** Empresarios (E).
+    - **Nivel 2:** Víctimas (V).
+    - **Nivel 3:** Especial / Prioritario (P).
+    - **Nivel 4:** General (G).
+3. Dentro de cada nivel, el sistema selecciona al ciudadano que lleva más tiempo esperando (**FIFO estricto**).
+4. Un turno de menor nivel (ej. General) solo será atendido cuando no existan turnos pendientes en los niveles superiores, independientemente de su tiempo de espera.
 
-**Postcondiciones:** Se garantiza que ningún usuario espere indefinidamente por falta de asesores generales.
+**Postcondiciones:** Se asegura una atención justa basada en el perfil del ciudadano y su hora de llegada.
 
 ---
 
