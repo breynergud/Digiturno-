@@ -69,10 +69,7 @@
                     </iframe>
                 </div>
 
-                <!-- CUADRO DE MENSAJE -->
-                <div class="flex-1 ape-bg-orange rounded-[1.5rem] p-6 flex items-center justify-center shadow-lg">
-                    <h2 class="text-white text-3xl font-black italic tracking-tight text-center">¡Prepárate! Estamos en inscripciones</h2>
-                </div>
+
 
                 <!-- RELOJ E INFO -->
                 <div class="h-28 glass-card p-6 flex justify-between items-center">

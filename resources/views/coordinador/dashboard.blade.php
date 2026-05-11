@@ -56,39 +56,8 @@
 
     <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Empresario Queue -->
-        <div class="lg:col-span-4 space-y-6">
-            <section class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-xl font-black text-black">Cola <span class="text-[#10069f]">Empresario</span></h2>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Turnos E-xxx pendientes</p>
-                    </div>
-                    <span id="empresario-count" class="bg-gray-100 text-black px-3 py-1 rounded-full text-xs font-black">{{ count($colaEmpresario) }}</span>
-                </div>
-
-                <div id="lista-empresario" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                    @forelse($colaEmpresario as $t)
-                        <div class="flex items-center justify-between bg-gray-50 border border-gray-100 p-3 rounded-2xl">
-                            <div>
-                                <span class="block text-sm font-black text-[#10069f]">{{ $t['tur_numero'] }}</span>
-                                <span class="text-[10px] font-semibold text-gray-400">{{ \Carbon\Carbon::parse($t['tur_hora_fecha'])->format('H:i') }}</span>
-                            </div>
-                            <span class="text-[9px] bg-white border border-gray-200 px-2 py-1 rounded-md font-bold uppercase text-gray-500">Pendiente</span>
-                        </div>
-                    @empty
-                        <div class="text-center py-10 opacity-30">
-                            <p class="text-xs font-bold uppercase tracking-widest mt-2">No hay turnos hoy</p>
-                        </div>
-                    @endforelse
-                </div>
-
-
-            </section>
-        </div>
-
-        <!-- Right Column: Advisor Status Center -->
-        <div class="lg:col-span-8 space-y-6">
+        <!-- Column: Advisor Status Center -->
+        <div class="lg:col-span-12 space-y-6">
             <section class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-8">
                     <div>
@@ -328,7 +297,7 @@
                 if (!res) return;
 
                 const data = await res.json();
-                document.getElementById('empresario-count').innerText = data.colaEmpresario.length;
+                // document.getElementById('empresario-count').innerText = data.colaEmpresario.length; // Removido
 
                 // Actualizar badges de estado de asesores en tiempo real
                 if (data.asesores) {

@@ -108,7 +108,7 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 1. El usuario ingresa su correo institucional.
 2. El usuario ingresa su contraseña.
 3. El sistema valida las credenciales y el rol asignado.
-4. El sistema genera un ID de ventana único (`TAB_ID`) para aislar la sesión.
+4. El sistema genera un ID de ventana único para aislar la sesión.
 5. Redirige al dashboard correspondiente (Asesor o Coordinador).
 
 **Postcondiciones:** El usuario accede a sus herramientas de gestión y queda registrado su acceso.
