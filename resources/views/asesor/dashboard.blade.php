@@ -898,6 +898,7 @@
                 }
 
                 if (res.status === 401) { location.href = '{{ route("asesor.login") }}'; return; }
+                if (!res.ok) return; // Prevent setting undefined states on server error
                 const data = await res.json();
 
                 // 1. Actualizar ESTADO GENERAL

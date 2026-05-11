@@ -42,6 +42,23 @@ class TurnoController extends Controller
                 ['user_tipo' => 'cliente']
             );
 
+            // 2.1 Validar que el usuario no tenga un turno en espera o siendo atendido
+            $turnoActivo = TurnoUnificado::where('USUARIO_user_id', $usuario->user_id)
+                ->whereDate('tur_hora_fecha', today())
+                ->where(function ($query) {
+                    $query->whereDoesntHave('atencion')
+                          ->orWhereHas('atencion', function ($q) {
+                              $q->whereNull('atnc_hora_fin');
+                          });
+                })
+                ->exists();
+
+            if ($turnoActivo) {
+                return response()->json([
+                    'message' => 'El documento ya tiene un turno en espera o en atención. Espere a ser atendido.'
+                ], 422);
+            }
+
             $prefijo = match ($request->tipo_atencion) {
                 'victimas' => 'V',
                 'especial' => 'S',
