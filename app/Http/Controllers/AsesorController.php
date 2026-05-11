@@ -182,6 +182,17 @@ class AsesorController extends Controller
         }
 
         $asesor  = Asesor::with('persona')->findOrFail($asesorId);
+        
+        $turnoActual = null;
+        $personaActual = null;
+        if ($asesor->ase_estado === 'ocupado' && $asesor->ase_turno_actual_id) {
+            $turnoActual = TurnoUnificado::find($asesor->ase_turno_actual_id);
+            if ($turnoActual) {
+                // Reutilizamos el helper privado para consistencia
+                $personaActual = $this->getPersonaDelTurno($turnoActual);
+            }
+        }
+
         $cola    = $this->getColaParaTipo($asesor->ase_tipo_asesor, $asesorId);
         $historial = $this->getHistorialHoy($asesor);
 
@@ -189,7 +200,7 @@ class AsesorController extends Controller
         $windowId = bin2hex(random_bytes(8));
         session(['asesor_window_id' => $windowId]);
 
-        return view('asesor.dashboard', compact('asesor', 'cola', 'historial'));
+        return view('asesor.dashboard', compact('asesor', 'cola', 'historial', 'turnoActual', 'personaActual'));
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -576,10 +587,23 @@ class AsesorController extends Controller
             }
         }
 
+        // Obtener detalles del turno actual si está ocupado
+        $turnoActual = null;
+        $personaActual = null;
+        if ($asesor->ase_estado === 'ocupado' && $asesor->ase_turno_actual_id) {
+            $turnoActual = TurnoUnificado::find($asesor->ase_turno_actual_id);
+            if ($turnoActual) {
+                $personaActual = $this->getPersonaDelTurno($turnoActual);
+            }
+        }
+
         return response()->json([
             'success'           => true,
             'estado'            => $asesor->ase_estado,
             'turno_actual_id'   => $asesor->ase_turno_actual_id,
+            'turno_actual_codigo'=> $turnoActual ? $turnoActual->tur_numero : null,
+            'usuario_id'        => $turnoActual ? $turnoActual->USUARIO_user_id : null,
+            'persona'           => $personaActual,
             'turno_actual_tipo' => $asesor->ase_turno_actual_tipo,
             'tipo_asesor'       => $tipo,
             'hay_principales'   => $hayPrincipales,

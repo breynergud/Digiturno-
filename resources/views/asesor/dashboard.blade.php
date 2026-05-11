@@ -143,9 +143,13 @@
                 <p class="text-blue-600 text-[10px] font-black uppercase tracking-widest mb-3">Atención Activa</p>
                 <div class="text-center py-4">
                     <div id="turno-codigo-actual" class="text-6xl font-black text-slate-900 tracking-tighter mb-2">
-                        —
+                        {{ $turnoActual ? $turnoActual->tur_numero : '—' }}
                     </div>
-                    <div id="info-persona" class="text-slate-500 text-xs font-semibold italic"></div>
+                    <div id="info-persona" class="text-slate-500 text-xs font-semibold italic">
+                        @if($personaActual)
+                            {{ $personaActual['nombres'] }} · Doc: {{ $personaActual['documento'] }}
+                        @endif
+                    </div>
                 </div>
                 <div class="flex gap-2 mt-2">
                     <button
@@ -506,7 +510,7 @@
             return res;
         }
 
-        let currentUsuarioId = null;
+        let currentUsuarioId = {{ $turnoActual ? $turnoActual->USUARIO_user_id : 'null' }};
         let lastPriorityCount = 0;
         let showReminderLock = false; // Bloqueo para no repetir el modal a cada rato
 
@@ -893,6 +897,17 @@
 
                 // 1. Actualizar ESTADO GENERAL
                 actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
+
+                // Sincronizar turno actual si está ocupado (para persistencia tras refresh)
+                if (data.estado === 'ocupado' && data.turno_actual_codigo) {
+                    currentUsuarioId = data.usuario_id;
+                    document.getElementById('turno-codigo-actual').innerText = data.turno_actual_codigo;
+                    if (data.persona) {
+                        document.getElementById('info-persona').innerText = 
+                            data.persona.nombres + ' · Doc: ' + data.persona.documento;
+                    }
+                    document.getElementById('card-turno-actual').classList.remove('hidden');
+                }
 
                 // Detección de cambio de perfil remoto
                 if (data.tipo_asesor && data.tipo_asesor !== currentTipoAsesor) {
