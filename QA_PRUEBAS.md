@@ -98,11 +98,11 @@ Este documento registra los casos de prueba ejecutados para validar las funciona
 **Prioridad:** Alta  
 **Módulo:** CU-08: Cierre de Sesión por Inactividad (Timeout)  
 **Precondiciones:** Sesión abierta sin interacción del mouse o teclado.  
-**Descripción:** Verificar que la sesión se cierre tras **10 minutos** de inactividad (9 min de espera + 1 min de aviso).
+**Descripción:** Verificar que la sesión se cierre tras **5 minutos** de inactividad (4 min de espera + 1 min de aviso).
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Inactividad prolongada | A los 9 min sale aviso. A los 10 min redirige al login y limpia cookies. | El sistema avisa y cierra sesión automáticamente si el asesor está en "Disponible". Si está en "En espera" u "Ocupado", mantiene la sesión activa. | **Pasa** |
+| Inactividad prolongada | A los 4 min sale aviso. A los 5 min redirige al login y limpia cookies. | El sistema avisa y cierra sesión automáticamente si el asesor está en "Disponible". Si está en "En espera" u "Ocupado", mantiene la sesión activa. | **Pasa** |
 
 ---
 
@@ -162,7 +162,7 @@ Este documento registra los casos de prueba ejecutados para validar las funciona
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Clic en 'Llamar Siguiente' | El sistema asigna el turno más prioritario (Empresario > Víctimas > ...) y antiguo. | El sistema asigna el turno siguiendo la jerarquía de prioridad y el orden FIFO correctamente. | **Pasa** |
+| Clic en 'Llamar Siguiente' | El sistema asigna el turno siguiendo la jerarquía estricta (Empresario > Víctimas > ...) y el orden FIFO. | El sistema asigna el turno siguiendo la jerarquía de prioridad y el orden FIFO correctamente sin saltarse niveles por tiempo de espera. | **Pasa** |
 
 ---
 
@@ -270,7 +270,7 @@ Este documento registra los casos de prueba ejecutados para validar las funciona
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Turno G (35 min) vs Turno P (1 min) | El sistema asigna primero el Turno P por su mayor jerarquía, a pesar del tiempo de espera del Turno G. | El sistema respeta estrictamente la jerarquía de categorías y el orden FIFO interno. | **Pasa** |
+| Turno G (35 min) vs Turno P (1 min) | El sistema asigna primero el Turno P por su mayor jerarquía, a pesar del tiempo de espera del Turno G. El tiempo de espera no rompe la jerarquía de nivel. | El sistema respeta estrictamente la jerarquía de categorías y el orden FIFO interno. | **Pasa** |
 
 ---
 
@@ -342,6 +342,6 @@ Este documento registra los casos de prueba ejecutados para validar las funciona
 
 | Datos de Entrada | Resultado Esperado | Resultado Actual | Estado |
 | :--- | :--- | :--- | :--- |
-| Iniciar y Finalizar Turno | El estado cambia a verde (cronómetro activo) y luego a gris tras confirmar cierre. | El sistema cambia de estado exitosamente, muestra cronómetro en tiempo real y solicita confirmación de cierre. | **Pasa** |
+| Iniciar y Finalizar Turno | El estado cambia a verde (cronómetro activo), y al finalizar se despliega un modal de confirmación personalizado antes de cerrar. | El sistema cambia de estado exitosamente, muestra cronómetro en tiempo real y solicita confirmación mediante un modal estilizado. | **Pasa** |
 
 ---

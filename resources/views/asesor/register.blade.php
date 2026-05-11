@@ -120,8 +120,6 @@
                                 const mesa = parseInt(mesaInput.value);
                                 if (mesa >= 16 && mesa <= 19) {
                                     tipoSelect.value = 'V';
-                                } else if (mesa === 20) {
-                                    tipoSelect.value = 'E'; // Suponiendo que la 20 es Empresario, o dejar en G
                                 } else {
                                     tipoSelect.value = 'G';
                                 }

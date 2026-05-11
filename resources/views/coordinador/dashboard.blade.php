@@ -80,7 +80,7 @@
                                 <div>
                                     <h3 class="text-sm font-black text-black lines-1">{{ $a->persona->pers_nombres }}</h3>
                                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-[#10069f]">
-                                        {{ $a->ase_tipo_asesor == 'G' ? 'General' : ($a->ase_tipo_asesor == 'V' ? 'Víctimas' : ($a->ase_tipo_asesor == 'E' ? 'Empresario' : 'General')) }}
+                                        {{ $a->ase_tipo_asesor == 'G' ? 'General' : 'Víctimas' }}
                                         <span class="ml-1 px-1.5 py-0.5 bg-[#10069f] text-white rounded text-[8px] tracking-normal">MESA {{ $a->ase_mesa }}</span>
                                     </span>
                                 </div>
@@ -97,10 +97,7 @@
                                 <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Nueva Cola</label>
                                 <select onchange="cambiarTipo(this, {{ $a->ase_id }})" class="bg-white border border-gray-200 text-[10px] font-bold rounded-lg px-2 py-1 outline-none focus:border-[#10069f]">
                                     <option value="G" {{ $a->ase_tipo_asesor == 'G' ? 'selected' : '' }}>General</option>
-                                    @if($a->ase_tipo_asesor == 'V')
-                                        <option value="V" selected>Víctimas</option>
-                                    @endif
-                                    <option value="E" {{ $a->ase_tipo_asesor == 'E' ? 'selected' : '' }}>Empresario</option>
+                                    <option value="V" {{ $a->ase_tipo_asesor == 'V' ? 'selected' : '' }}>Víctimas</option>
                                 </select>
                             </div>
                             @if($a->ase_estado === 'ocupado')
@@ -187,7 +184,7 @@
                         <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fila</label>
                         <select name="ase_tipo_asesor" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#10069f] outline-none">
                             <option value="G">General</option>
-                            <option value="E">Empresario</option>
+                            <option value="V">Víctimas</option>
                         </select>
                     </div>
                 </div>

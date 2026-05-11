@@ -915,9 +915,7 @@
                     
                     const labelsTipo = {
                         'V': 'Víctimas',
-                        'G': 'General',
-                        'P': 'Prioritario',
-                        'E': 'Empresario'
+                        'G': 'General'
                     };
                     const nuevoNombre = labelsTipo[currentTipoAsesor] || currentTipoAsesor;
                     
@@ -1219,7 +1217,7 @@
         let countdownTime = 60;
         let countdownInterval = null;
         let heartbeatInterval = null;
-        const IDLE_LIMIT = 9 * 60 * 1000; // 9 minutos en milisegundos (el aviso dura 1 min adicional)
+        const IDLE_LIMIT = 4 * 60 * 1000; // 4 minutos en milisegundos (el aviso dura 1 min adicional para 5 min total)
 
         function resetIdleTimer() {
             if (document.getElementById('modal-timeout').classList.contains('hidden')) {

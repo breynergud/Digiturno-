@@ -63,7 +63,7 @@ class AsesorController extends Controller
             'pers_apellidos' => 'required|string',
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6|confirmed',
-            'ase_tipo_asesor'=> 'required|in:G,V,E',
+            'ase_tipo_asesor'=> 'required|in:G,V',
             'ase_mesa'       => [
                 'required',
                 'integer',
@@ -678,9 +678,8 @@ class AsesorController extends Controller
     private function obtenerTiposPermitidos(string $tipoAsesor): array
     {
         return match($tipoAsesor) {
-            'V'  => ['Victimas', 'Prioritario', 'General', 'Empresario'],
-            'G'  => ['Prioritario', 'General', 'Empresario'],
-            'E'  => ['Empresario', 'Prioritario', 'General'],
+            'V'  => ['Victimas'],
+            'G'  => ['Empresario', 'Prioritario', 'General'],
             default => ['General'],
         };
     }
@@ -690,8 +689,6 @@ class AsesorController extends Controller
     {
         return match($tipoAsesor) {
             'V'  => 'Victimas',
-            'P'  => 'Prioritario',
-            'E'  => 'Empresario',
             default => 'General',
         };
     }

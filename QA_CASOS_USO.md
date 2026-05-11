@@ -115,7 +115,7 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 
 **Excepciones:**
 - **Credenciales Incorrectas:** El sistema muestra aviso de error y deniega el acceso por seguridad.
-
+to
 ---
 
 ## CU-07: Cierre de Sesión Manual
@@ -141,12 +141,12 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 **Precondiciones:** Sesión abierta sin interacción del mouse o teclado.
 
 ### Flujo Principal:
-1. El sistema detecta **9 minutos** de inactividad.
+1. El sistema detecta **4 minutos** de inactividad.
 2. Muestra un modal de advertencia a pantalla completa con una cuenta regresiva de **60 segundos**.
 3. Si el usuario no interactúa en ese minuto, el sistema ejecuta el logout automático (Backend y Frontend).
 4. El sistema redirige al login con un mensaje de "Sesión expirada".
 
-**Postcondiciones:** Sesión finalizada por seguridad y persistencia de estados limpiada.
+**Postcondiciones:** Sesión finalizada por seguridad y persistencia de estados limpiada (5 minutos en total).
 
 **Excepciones:**
 - **Respuesta de Usuario:** Si el usuario presiona 'Seguir conectado' o mueve el mouse/teclado durante el aviso, el contador se reinicia a cero.
@@ -236,10 +236,10 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 ### Flujo Principal (Jerarquía de Asignación):
 1. El asesor presiona el botón **'Llamar Siguiente'**.
 2. El sistema evalúa la cola bajo el siguiente orden de prioridad:
-    - **Regla de Inanición:** Turnos de cualquier tipo con más de **35 minutos** de espera.
-    - **Perfil del Asesor:** Si el asesor es tipo 'Víctimas', se priorizan turnos tipo **'V'**.
-    - **Prioridad General:** Turnos tipo **'P'** (Especial/Prioritario).
-    - **Cola General:** Turnos tipo **'G'** por orden de llegada (FIFO).
+    - **Perfil del Asesor:** 
+        - Si es tipo **'Víctimas'**: Atiende estrictamente turnos tipo **'V'**.
+        - Si es tipo **'General'**: Atiende turnos en orden: **'E' (Empresario) > 'P' (Prioritario) > 'G' (General)**.
+    - **Orden FIFO:** Dentro de cada categoría, se selecciona al usuario con mayor tiempo de espera.
 3. El sistema vincula el ID del turno al asesor y cambia su estado a **'Ocupado'**.
 
 **Postcondiciones:** El turno se anuncia en la TV y se carga en la tarjeta de 'Atención Activa' del asesor.
@@ -273,8 +273,8 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 **Precondiciones:** El asesor debe tener un turno en estado de atención activa (Ocupado).
 
 ### Flujo Principal:
-1. El asesor solicita nombres y teléfono al ciudadano.
-2. Ingresa la información en el formulario de la tarjeta central.
+1. El asesor solicita nombres y teléfono al ciudadano (El Documento y Tipo se cargan automáticamente y son de solo lectura).
+2. Ingresa la información en el formulario del modal de atención.
 3. Presiona el botón **'Guardar Datos'**.
 4. El sistema valida los datos y actualiza el registro de la persona de forma persistente en la base de datos.
 
@@ -480,7 +480,8 @@ Este documento detalla la lógica de negocio y los flujos de interacción del si
 2. Presiona el botón verde de **'Iniciar Turno'**.
 3. El sistema marca la hora de inicio de jornada y activa el cronómetro en tiempo real.
 4. Al terminar sus labores, presiona el botón rojo **'Finalizar Turno'**.
-5. El sistema registra la hora de fin y calcula el tiempo total de trabajo (descontando pausas).
+5. El sistema despliega un **Modal de Confirmación personalizado** para evitar cierres accidentales.
+6. Al confirmar, el sistema registra la hora de fin y calcula el tiempo total de trabajo.
 
 **Postcondiciones:** Se crea un registro de jornada laboral para el reporte de nómina/gestión.
 

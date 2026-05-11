@@ -131,13 +131,12 @@ class CoordinadorController extends Controller
 
         $coordinador = Coordinador::with('persona')->findOrFail(session('coor_id'));
         $asesores    = Asesor::with('persona')->get();
-        $colaEmpresario = $this->getColaEmpresario();
 
         // Establecer un window_id único para esta pestaña (aislamiento)
         $windowId = bin2hex(random_bytes(8));
         session(['coor_window_id' => $windowId]);
         
-        return view('coordinador.dashboard', compact('coordinador', 'asesores', 'colaEmpresario'));
+        return view('coordinador.dashboard', compact('coordinador', 'asesores'));
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -163,7 +162,6 @@ class CoordinadorController extends Controller
 
         return response()->json([
             'asesores'       => $asesores,
-            'colaEmpresario' => $this->getColaEmpresario(),
         ]);
     }
 
@@ -175,7 +173,7 @@ class CoordinadorController extends Controller
     {
         $request->validate([
             'ase_id'   => 'required|exists:asesor,ase_id',
-            'nuevo_tipo' => 'required|in:G,E',
+            'nuevo_tipo' => 'required|in:G,V',
         ]);
 
         $asesor = Asesor::findOrFail($request->ase_id);
@@ -441,7 +439,7 @@ class CoordinadorController extends Controller
             'pers_apellidos' => 'required|string',
             'ase_correo'     => 'required|email|unique:asesor,ase_correo',
             'ase_password'   => 'required|string|min:6',
-            'ase_tipo_asesor'=> 'required|in:G,E',
+            'ase_tipo_asesor'=> 'required|in:G,V',
             'ase_mesa'       => [
                 'required',
                 'integer',
@@ -483,14 +481,4 @@ class CoordinadorController extends Controller
     //  HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    private function getColaEmpresario(): array
-    {
-        $atendidos = Atencion::pluck('TURNO_tur_id')->toArray();
-        return TurnoUnificado::whereNotIn('tur_id', $atendidos)
-            ->where('tur_tipo', 'Empresario')
-            ->whereDate('tur_hora_fecha', today())
-            ->orderBy('tur_id')
-            ->get()
-            ->toArray();
-    }
 }
