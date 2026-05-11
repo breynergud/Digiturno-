@@ -365,6 +365,7 @@
 
             <form id="forma-persona" class="space-y-4 hidden" onsubmit="guardarPersona(event)">
                 <input type="hidden" id="f-pers-doc" name="pers_doc">
+                <input type="hidden" id="f-tipodoc" name="pers_tipodoc">
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
@@ -373,18 +374,7 @@
                             class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-400 font-semibold text-sm cursor-not-allowed">
                     </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo Doc.</label>
-                        <select name="pers_tipodoc" id="f-tipodoc" required
-                            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
-                            <option value="CC">Cédula CC</option>
-                            <option value="TI">Tarjeta TI</option>
-                            <option value="CE">Céd. Extranjera</option>
-                            <option value="PEP">PEP</option>
-                        </select>
-                    </div>
-
-                    <div>
+                    <div class="col-span-2">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Fecha de Nacimiento</label>
                         <input id="f-fecha-nac" name="pers_fecha_nac" type="date"
                             class="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-3 text-slate-900 font-semibold text-sm focus:border-[#10069f] outline-none transition-all">
