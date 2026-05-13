@@ -27,6 +27,7 @@ Route::middleware(['asesor.session'])->group(function () {
         Route::post('/logout',    [AsesorController::class, 'logout'])->name('asesor.logout');
         Route::get('/dashboard',  [AsesorController::class, 'dashboard'])->name('asesor.dashboard');
         Route::get('/api/estado', [AsesorController::class, 'apiEstado'])->name('asesor.api.estado');
+        Route::post('/llamar-turno',       [AsesorController::class, 'llamarTurno'])->name('asesor.llamar');
         Route::post('/aceptar-turno',      [AsesorController::class, 'aceptarTurno'])->name('asesor.aceptar');
         Route::post('/finalizar-atencion', [AsesorController::class, 'finalizarAtencion'])->name('asesor.finalizar');
         Route::post('/toggle-espera',      [AsesorController::class, 'toggleEspera'])->name('asesor.espera');

@@ -204,8 +204,6 @@ class TurnoController extends Controller
             }
 
             foreach ($attendingTurns as $tu) {
-                // Solo incluimos en la TV los que son "Llamados Recientes" (últimos 30 seg)
-                // Después de ese tiempo, desaparecen de la pantalla para liberar espacio.
                 $isRecent = $tu->atencion && $tu->atencion->atnc_hora_inicio >= now()->subSeconds(30);
                 
                 if ($isRecent && isset($espejos[$tu->tur_numero])) {
@@ -215,8 +213,27 @@ class TurnoController extends Controller
                     $turnoEspejo->atencion_id = $tu->atencion->atnc_id;
                     $turnoEspejo->llamado_at = $tu->atencion->atnc_hora_inicio;
                     $turnoEspejo->is_recent = true;
-
                     $result['calling'][] = $turnoEspejo;
+                }
+            }
+
+            // Incluir turnos llamados manualmente (sin atención aún) desde caché
+            foreach ($waitingTurns as $tu) {
+                $cacheKey = 'llamado_turno_' . $tu->tur_id;
+                $llamado  = Cache::get($cacheKey);
+                if ($llamado && isset($espejos[$tu->tur_numero])) {
+                    $turnoEspejo = $espejos[$tu->tur_numero];
+                    $turnoEspejo->is_active   = true;
+                    $turnoEspejo->mesa        = $llamado['mesa'];
+                    $turnoEspejo->atencion_id = 'llamado_' . $tu->tur_id;
+                    $turnoEspejo->llamado_at  = $llamado['llamado_at'];
+                    $turnoEspejo->is_recent   = true;
+                    $result['calling'][] = $turnoEspejo;
+                    // Quitar de waiting para no duplicar
+                    $result['waiting'] = array_values(array_filter(
+                        $result['waiting'],
+                        fn($w) => $w->codigo_turno !== $tu->tur_numero
+                    ));
                 }
             }
 

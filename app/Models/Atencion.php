@@ -17,6 +17,8 @@ class Atencion extends Model
         'atnc_hora_inicio',
         'atnc_hora_fin',
         'atnc_tipo',
+        'atnc_estado',
+        'atnc_observacion',
         'ASESOR_ase_id',
         'COORDINADOR_coor_id',
         'TURNO_tur_id',

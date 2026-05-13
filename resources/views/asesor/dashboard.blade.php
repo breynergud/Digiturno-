@@ -168,7 +168,7 @@
                     </button>
                 </div>
                 <button
-                    onclick="finalizarAtencion('ausente')"
+                    onclick="abrirModalAusente()"
                     class="w-full mt-2 bg-transparent border border-gray-600 border-dashed text-gray-500 font-bold py-2 rounded-xl uppercase tracking-widest text-[10px] hover:border-red-500 hover:text-red-400 transition-colors"
                 >
                     ✕ El usuario no se presentó
@@ -220,7 +220,7 @@
                     class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all border-b-4 border-emerald-700 pulse-blue"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 8v4l3 3"/></svg>
-                    ▶ Iniciar Turno
+                    ▶ Iniciar Jornada
                 </button>
                 @else
                 <button
@@ -229,7 +229,7 @@
                     class="w-full bg-red-800 hover:bg-red-900 text-white font-extrabold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all border-b-4 border-red-950"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10h6v4H9z"/></svg>
-                    ■ Finalizar Turno
+                    ■ Finalizar Jornada
                 </button>
                 @endif
 
@@ -245,7 +245,7 @@
             <div id="card-inactivo" class="{{ $asesor->ase_estado === 'inactivo' ? '' : 'hidden' }} glass rounded-[32px] p-5 border-2 border-dashed border-gray-300 text-center">
                 <div class="text-3xl mb-2">⏸</div>
                 <p class="text-slate-700 font-black text-sm uppercase tracking-tight">Turno no iniciado</p>
-                <p class="text-slate-400 text-xs font-medium mt-1">Presiona <strong>Iniciar Turno</strong> para comenzar a recibir turnos</p>
+                <p class="text-slate-400 text-xs font-medium mt-1">Presiona <strong>Iniciar Jornada</strong> para comenzar a recibir turnos</p>
             </div>
 
         </div>
@@ -329,6 +329,50 @@
         </div>
         </div>
     </main>
+
+    <!-- ─── MODAL USUARIO AUSENTE ───────────────────────────────── -->
+    <div id="modal-ausente" class="fixed inset-0 z-[110] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl border border-red-100 overflow-hidden">
+            <div class="h-1.5 bg-red-500 w-full"></div>
+            <div class="p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-500 text-2xl">✕</div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Usuario no se presentó</h3>
+                        <p class="text-slate-400 text-xs font-semibold">Confirma antes de marcar como ausente</p>
+                    </div>
+                </div>
+
+                {{-- Contador de espera --}}
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 text-center">
+                    <p class="text-amber-600 text-[10px] font-black uppercase tracking-widest mb-1">Tiempo de espera</p>
+                    <p class="text-4xl font-black text-amber-700" id="ausente-contador">02:00</p>
+                    <p class="text-amber-500 text-[10px] font-semibold mt-1">Espera este tiempo antes de marcar ausente</p>
+                    <div class="w-full bg-amber-200 rounded-full h-1.5 mt-3">
+                        <div id="ausente-barra" class="bg-amber-500 h-1.5 rounded-full transition-all duration-1000" style="width:100%"></div>
+                    </div>
+                </div>
+
+                {{-- Campo de comentario --}}
+                <div class="mb-6">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Observación (opcional)</label>
+                    <textarea id="ausente-comentario" rows="3" placeholder="Ej: Se llamó 3 veces, no hubo respuesta..."
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:border-red-400 outline-none resize-none transition-all"></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="cerrarModalAusente()"
+                        class="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-black uppercase tracking-widest text-xs hover:border-slate-400 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="btn-confirmar-ausente" onclick="confirmarAusente()"
+                        class="flex-1 py-3 rounded-xl bg-red-500 text-white font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-colors border-b-2 border-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Marcar Ausente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ─── MODAL RECORDATORIO TURNO ESPECIAL ────────────────────── -->
     <div id="modal-prioridad" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-md px-4">
@@ -449,7 +493,7 @@
                 </div>
                 <h3 class="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter">Turno de Trabajo Activo</h3>
                 <p class="text-slate-500 font-medium mb-8 leading-relaxed">
-                    Aún tienes un turno de trabajo iniciado. Para cerrar sesión, primero debes <b>Finalizar Turno</b> usando el botón rojo del panel.
+                    Aún tienes una jornada iniciada. Para cerrar sesión, primero debes <b>Finalizar Jornada</b> usando el botón rojo del panel.
                 </p>
                 <button onclick="cerrarModalLogoutManual()" class="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-lg border-b-4 border-slate-700">
                     ENTENDIDO
@@ -533,9 +577,9 @@
                 res = await handleFetchResponse(res);
                 if (!res) return;
                 const data = await res.json();
-                if (!res.ok) { showToast(data.error || 'Error al iniciar turno.', 'error'); return; }
+                if (!res.ok) { showToast(data.error || 'Error al iniciar jornada.', 'error'); return; }
                 actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
-                showToast('Turno de trabajo iniciado. ¡Listo para atender!', 'success');
+                showToast('Jornada iniciada. ¡Listo para atender!', 'success');
                 await refreshPollData();
             } catch (e) { showToast('Error de conexión.', 'error'); }
         }
@@ -570,12 +614,50 @@
                 res = await handleFetchResponse(res);
                 if (!res) return;
                 const data = await res.json();
-                if (!res.ok) { showToast(data.error || 'Error al finalizar turno.', 'error'); return; }
+                if (!res.ok) { showToast(data.error || 'Error al finalizar jornada.', 'error'); return; }
                 document.getElementById('card-turno-actual').classList.add('hidden');
                 actualizarEstadoUI('inactivo');
                 showToast('Turno de trabajo finalizado.', 'warn');
                 await refreshPollData();
             } catch (e) { showToast('Error de conexión.', 'error'); }
+        }
+
+        // ── Modal Usuario Ausente ──────────────────────────────────
+        let ausenteInterval = null;
+        const AUSENTE_SEGUNDOS = 120; // 2 minutos de espera
+
+        function abrirModalAusente() {
+            document.getElementById('ausente-comentario').value = '';
+            document.getElementById('modal-ausente').classList.remove('hidden');
+            document.getElementById('modal-ausente').classList.add('flex');
+            iniciarContadorAusente();
+        }
+
+        function cerrarModalAusente() {
+            document.getElementById('modal-ausente').classList.add('hidden');
+            document.getElementById('modal-ausente').classList.remove('flex');
+            clearInterval(ausenteInterval);
+        }
+
+        function iniciarContadorAusente() {
+            let segundos = AUSENTE_SEGUNDOS;
+            const contador = document.getElementById('ausente-contador');
+            const barra    = document.getElementById('ausente-barra');
+
+            clearInterval(ausenteInterval);
+            ausenteInterval = setInterval(() => {
+                segundos--;
+                const m = String(Math.floor(segundos / 60)).padStart(2, '0');
+                const s = String(segundos % 60).padStart(2, '0');
+                contador.textContent = `${m}:${s}`;
+                barra.style.width = `${(segundos / AUSENTE_SEGUNDOS) * 100}%`;
+
+                if (segundos <= 0) {
+                    clearInterval(ausenteInterval);
+                    contador.textContent = '00:00';
+                    barra.style.width = '0%';
+                }
+            }, 1000);
         }
 
         function cerrarRecordatorio() {
@@ -702,20 +784,110 @@
                 if (estado === 'inactivo') {
                     btnTurno.onclick = iniciarTurno;
                     btnTurno.className = 'w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all border-b-4 border-emerald-700 pulse-blue';
-                    btnTurno.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 8v4l3 3"/></svg> ▶ Iniciar Turno';
+                    btnTurno.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 8v4l3 3"/></svg> ▶ Iniciar Jornada';
                     if (timerDiv) timerDiv.classList.add('hidden');
                     if (cardInactivo) cardInactivo.classList.remove('hidden');
                     detenerTimerTurno();
                 } else {
                     btnTurno.onclick = confirmarFinalizarTurno;
                     btnTurno.className = 'w-full bg-red-800 hover:bg-red-900 text-white font-extrabold py-4 rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all border-b-4 border-red-950';
-                    btnTurno.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10h6v4H9z"/></svg> ■ Finalizar Turno';
+                    btnTurno.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10h6v4H9z"/></svg> ■ Finalizar Jornada';
                     if (timerDiv) timerDiv.classList.remove('hidden');
                     if (cardInactivo) cardInactivo.classList.add('hidden');
                     
                     // Reiniciar timer con datos de pausa
                     iniciarTimerTurno(sesInicio, pausaMs, isPaused);
                 }
+            }
+        }
+
+        // ── Llamar Turno (sin atender, solo anunciar en TV) ───────
+        const llamadosContador = {}; // { tur_id: numero_de_llamados }
+        const MAX_LLAMADOS = 2;
+
+        async function llamarTurno(turId) {
+            try {
+                let res = await fetch('{{ route("asesor.llamar") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': CSRF,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ tur_id: turId })
+                });
+                res = await handleFetchResponse(res);
+                if (!res) return;
+                const data = await res.json();
+                if (data.success) {
+                    // Incrementar contador de llamados
+                    llamadosContador[turId] = (llamadosContador[turId] || 0) + 1;
+                    const restantes = MAX_LLAMADOS - llamadosContador[turId];
+                    if (restantes > 0) {
+                        showToast(`📢 Turno ${data.codigo_turno} llamado — Mesa ${data.mesa} (${restantes} llamado${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''})`, 'success');
+                    } else {
+                        showToast(`📢 Turno ${data.codigo_turno} — Máximo de llamados alcanzado`, 'warn');
+                    }
+                    // Forzar re-render de la cola para actualizar botones
+                    await refreshPollData();
+                } else {
+                    showToast(data.error || 'Error al llamar turno.', 'error');
+                }
+            } catch (e) { showToast('Error de conexión.', 'error'); }
+        }
+
+        function getLlamarBtn(turId) {
+            const llamados = llamadosContador[turId] || 0;
+            if (llamados >= MAX_LLAMADOS) {
+                // Máximo alcanzado: mostrar botón de ausente
+                return `<button onclick="abrirModalAusenteDirecto(${turId})"
+                    class="bg-red-100 text-red-700 font-black py-2 px-3 rounded-lg text-[10px] uppercase hover:bg-red-200 transition-colors border border-red-300 animate-pulse">
+                    ✕ No se presentó
+                </button>`;
+            }
+            const restantes = MAX_LLAMADOS - llamados;
+            return `<button onclick="llamarTurno(${turId})"
+                class="bg-indigo-100 text-indigo-700 font-black py-2 px-3 rounded-lg text-[10px] uppercase hover:bg-indigo-200 transition-colors border border-indigo-200">
+                📢 Llamar${llamados > 0 ? ' (' + restantes + ')' : ''}
+            </button>`;
+        }
+
+        // Abrir modal ausente desde la cola (sin turno activo)
+        function abrirModalAusenteDirecto(turId) {
+            // Guardamos el turId para usarlo al confirmar
+            window._ausenteTurId = turId;
+            document.getElementById('ausente-comentario').value = '';
+            document.getElementById('modal-ausente').classList.remove('hidden');
+            document.getElementById('modal-ausente').classList.add('flex');
+            iniciarContadorAusente();
+        }
+
+        async function confirmarAusente() {
+            const comentario = document.getElementById('ausente-comentario').value.trim();
+            cerrarModalAusente();
+
+            // Si viene de la cola (sin turno activo), aceptar y finalizar inmediatamente
+            if (window._ausenteTurId) {
+                const turId = window._ausenteTurId;
+                window._ausenteTurId = null;
+                try {
+                    // Primero aceptar el turno específico
+                    let res = await fetch('{{ route("asesor.aceptar") }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: JSON.stringify({ tur_id: turId })
+                    });
+                    res = await handleFetchResponse(res);
+                    if (!res) return;
+                    const aceptado = await res.json();
+                    if (!aceptado.success) { showToast(aceptado.error || 'Error al aceptar turno.', 'error'); return; }
+                    // Luego finalizar como ausente
+                    await finalizarAtencion('ausente', comentario);
+                } catch (e) { showToast('Error de conexión.', 'error'); }
+            } else {
+                // Viene del turno activo
+                await finalizarAtencion('ausente', comentario);
             }
         }
 
@@ -795,7 +967,7 @@
         }
 
         // ── Finalizar Atención ─────────────────────────────────────
-        async function finalizarAtencion(estado = 'atendido') {
+        async function finalizarAtencion(estado = 'atendido', observacion = '') {
             try {
                 let res = await fetch('{{ route("asesor.finalizar") }}', {
                     method: 'POST',
@@ -805,7 +977,7 @@
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({ estado: estado })
+                    body: JSON.stringify({ estado: estado, observacion: observacion })
                 });
 
                 res = await handleFetchResponse(res);
@@ -939,11 +1111,14 @@
                                 <p class="${disabled ? 'text-gray-400' : 'text-amber-600'} text-[10px] font-black uppercase tracking-widest">Turno Especial${disabled ? ' · Sin disponibilidad' : ''}</p>
                                 <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                             </div>
+                            <div class="flex items-center gap-2">
                             <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
                                 ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
                                 class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#ffb500] text-[#0a0455] hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-yellow-700'}">
                                 ATENDER
                             </button>
+                            ${getLlamarBtn(t.id)}
+                            </div>
                         </div>`;
                     }).join('');
                 } else {
@@ -973,11 +1148,14 @@
                                     <p class="${disabled ? 'text-gray-400' : 'text-red-600'} text-[10px] font-black uppercase tracking-widest">Víctimas${disabled ? ' · Sin disponibilidad' : ''}</p>
                                     <p class="text-slate-900 font-black text-2xl">${t.codigo}</p>
                                 </div>
+                                <div class="flex items-center gap-2">
                                 <button onclick="${disabled ? '' : 'aceptarTurnoEspecifico(' + t.id + ')'}"
                                     ${disabled ? 'disabled title="Atiende primero los turnos de tu cola"' : ''}
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-red-800'}">
                                     ATENDER
                                 </button>
+                                ${getLlamarBtn(t.id)}
+                                </div>
                             </div>`;
                         }).join('');
                     }
@@ -1008,6 +1186,7 @@
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-slate-700 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-slate-900'}">
                                     ATENDER
                                 </button>
+                                ${getLlamarBtn(t.id)}
                             </div>
                         </div>`;
                     }).join('');
@@ -1039,6 +1218,7 @@
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-blue-800'}">
                                     ATENDER
                                 </button>
+                                ${getLlamarBtn(t.id)}
                             </div>
                         </div>`;
                     }).join('');

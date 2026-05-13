@@ -389,6 +389,47 @@ class AsesorController extends Controller
     //  ACCIONES
     // ─────────────────────────────────────────────────────────────
 
+    public function llamarTurno(Request $request)
+    {
+        $asesorId = session('asesor_id');
+        if (! $asesorId) {
+            return response()->json(['error' => 'no_session'], 401);
+        }
+
+        $request->validate(['tur_id' => 'required|integer']);
+
+        $asesor = Asesor::findOrFail($asesorId);
+        $turno  = TurnoUnificado::find($request->tur_id);
+
+        if (! $turno) {
+            return response()->json(['error' => 'Turno no encontrado.'], 404);
+        }
+
+        // Guardar en caché el llamado por 35 segundos para que la TV lo muestre
+        $cacheKey = 'llamado_turno_' . $turno->tur_id;
+        Cache::put($cacheKey, [
+            'tur_id'       => $turno->tur_id,
+            'tur_numero'   => $turno->tur_numero,
+            'tur_tipo'     => $turno->tur_tipo,
+            'mesa'         => $asesor->ase_mesa ?? 0,
+            'llamado_at'   => now()->toIso8601String(),
+        ], 35);
+
+        // Actualizar espejo en tabla vieja para que la TV lo muestre con la mesa
+        \App\Models\Turno::where('codigo_turno', $turno->tur_numero)
+            ->whereDate('created_at', today())
+            ->update(['mesa' => $asesor->ase_mesa ?? 0]);
+
+        // Invalidar caché de TV para que recargue con el llamado
+        Cache::forget('tv_pending_turns');
+
+        return response()->json([
+            'success'      => true,
+            'codigo_turno' => $turno->tur_numero,
+            'mesa'         => $asesor->ase_mesa ?? 0,
+        ]);
+    }
+
     public function aceptarTurno(Request $request)
     {
         $asesorId = session('asesor_id');
@@ -482,10 +523,11 @@ class AsesorController extends Controller
         }
 
         $turnoId = $asesor->ase_turno_actual_id;
-        $estadoAtencion = $request->input('estado', 'atendido'); // Puede llegar 'ausente'
+        $estadoAtencion = $request->input('estado', 'atendido');
+        $observacion    = $request->input('observacion'); // Comentario opcional
 
         // Actualizar hora_fin del registro de atención
-        $this->cerrarAtencion($turnoId, $asesor->ase_id, $estadoAtencion);
+        $this->cerrarAtencion($turnoId, $asesor->ase_id, $estadoAtencion, $observacion);
 
         // Invalidar cachés
         Cache::forget('tv_pending_turns');
@@ -710,14 +752,15 @@ class AsesorController extends Controller
         ]);
     }
 
-    private function cerrarAtencion(int $turnoId, int $asesorId, string $estado = 'atendido'): void
+    private function cerrarAtencion(int $turnoId, int $asesorId, string $estado = 'atendido', ?string $observacion = null): void
     {
         Atencion::where('TURNO_tur_id', $turnoId)
             ->where('ASESOR_ase_id', $asesorId)
             ->whereNull('atnc_hora_fin')
             ->update([
-                'atnc_hora_fin' => now(),
-                'atnc_estado'   => $estado
+                'atnc_hora_fin'      => now(),
+                'atnc_estado'        => $estado,
+                'atnc_observacion'   => $observacion,
             ]);
     }
 
