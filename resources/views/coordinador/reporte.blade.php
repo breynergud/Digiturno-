@@ -206,7 +206,8 @@
                             <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Fecha y Hora (Inicio)</th>
                             <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Espera del Usuario</th>
                             <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tiempo Asesor</th>
-                            <th class="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Estado</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Estado</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Observación</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -222,6 +223,13 @@
                             <td class="px-4 py-5 text-xs font-bold text-gray-500 text-center">{{ $det['espera'] }}</td>
                             <td class="px-4 py-5 text-xs font-bold text-pink-600 text-center" style="color: #10069f;">{{ $det['atencion'] }}</td>
                             <td class="px-8 py-5 text-xs font-bold {{ $det['estado'] == 'atendido' ? 'text-green-500' : 'text-red-500' }} uppercase text-right">{{ $det['estado'] }}</td>
+                            <td class="px-4 py-5 text-xs text-gray-500 max-w-xs">
+                                @if($det['observacion'])
+                                    <span class="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[10px] font-semibold">{{ $det['observacion'] }}</span>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

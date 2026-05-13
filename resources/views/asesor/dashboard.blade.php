@@ -155,7 +155,7 @@
                     <button
                         onclick="abrirModal()"
                         id="btn-ver-detalles"
-                        class="btn-info flex-1 text-white font-bold py-2.5 rounded-xl uppercase tracking-widest text-xs flex items-center justify-center gap-1.5"
+                        class="btn-info flex-1 text-black font-bold py-2.5 rounded-xl uppercase tracking-widest text-xs flex items-center justify-center gap-1.5"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         Ver Detalles
@@ -167,9 +167,22 @@
                         ✓ Finalizar
                     </button>
                 </div>
+                {{-- Timer de atención --}}
+                <div id="atencion-timer-display" class="hidden text-center mt-2 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Tiempo de atención</p>
+                    <p id="atencion-timer-text" class="text-2xl font-black text-blue-700 tabular-nums">00:00</p>
+                </div>
+                {{-- Botón Comenzar Atención --}}
+                <button
+                    id="btn-comenzar-atencion"
+                    onclick="comenzarAtencion()"
+                    class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2.5 rounded-xl uppercase tracking-widest text-xs border-b-4 border-blue-900 transition-colors flex items-center justify-center gap-2"
+                >
+                    ▶ Comenzar Atención
+                </button>
                 <button
                     onclick="abrirModalAusente()"
-                    class="w-full mt-2 bg-transparent border border-gray-600 border-dashed text-gray-500 font-bold py-2 rounded-xl uppercase tracking-widest text-[10px] hover:border-red-500 hover:text-red-400 transition-colors"
+                    class="w-full mt-1 bg-transparent border border-gray-600 border-dashed text-gray-500 font-bold py-2 rounded-xl uppercase tracking-widest text-[10px] hover:border-red-500 hover:text-red-400 transition-colors"
                 >
                     ✕ El usuario no se presentó
                 </button>
@@ -626,6 +639,86 @@
         let ausenteInterval = null;
         const AUSENTE_SEGUNDOS = 120; // 2 minutos de espera
 
+        // ── Timer de Atención (corre desde "Comenzar Atención") ──
+        let atencionTimerInterval = null;
+        let atencionTimerSegundos = 0;
+        let atencionIniciada = false;
+        let llamadosAtencionContador = 0;
+        const MAX_LLAMADOS_ATENCION = 2;
+
+        async function comenzarAtencion() {
+            const btn = document.getElementById('btn-comenzar-atencion');
+
+            // Obtener el tur_id del turno activo desde el estado actual
+            const turId = window._turnoActualId;
+
+            if (llamadosAtencionContador < MAX_LLAMADOS_ATENCION) {
+                llamadosAtencionContador++;
+                const restantes = MAX_LLAMADOS_ATENCION - llamadosAtencionContador;
+
+                // Llamar al turno en la TV
+                if (turId) {
+                    try {
+                        await fetch('{{ route("asesor.llamar") }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: JSON.stringify({ tur_id: turId })
+                        });
+                    } catch(e) {}
+                }
+
+                if (restantes > 0) {
+                    btn.textContent = `📢 Llamando... (${restantes} llamado${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''})`;
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60', 'cursor-not-allowed');
+                    // Habilitar de nuevo después de 5 segundos para el siguiente llamado
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                        btn.textContent = `▶ Llamar de nuevo (${restantes} restante${restantes > 1 ? 's' : ''})`;
+                    }, 5000);
+                } else {
+                    // Último llamado — ocultar botón e iniciar timer
+                    btn.classList.add('hidden');
+                    _iniciarTimerAtencion();
+                    showToast('Atención iniciada. Timer corriendo.', 'success');
+                }
+                return;
+            }
+        }
+
+        function _iniciarTimerAtencion() {
+            if (atencionIniciada) return;
+            atencionIniciada = true;
+            atencionTimerSegundos = 0;
+            document.getElementById('atencion-timer-display').classList.remove('hidden');
+            atencionTimerInterval = setInterval(() => {
+                atencionTimerSegundos++;
+                const m = String(Math.floor(atencionTimerSegundos / 60)).padStart(2, '0');
+                const s = String(atencionTimerSegundos % 60).padStart(2, '0');
+                document.getElementById('atencion-timer-text').textContent = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function resetAtencionTimer() {
+            clearInterval(atencionTimerInterval);
+            atencionTimerInterval = null;
+            atencionTimerSegundos = 0;
+            atencionIniciada = false;
+            llamadosAtencionContador = 0;
+            window._turnoActualId = null;
+            const timerDisplay = document.getElementById('atencion-timer-display');
+            const btnComenzar  = document.getElementById('btn-comenzar-atencion');
+            if (timerDisplay) timerDisplay.classList.add('hidden');
+            if (btnComenzar) {
+                btnComenzar.classList.remove('hidden', 'opacity-60', 'cursor-not-allowed');
+                btnComenzar.disabled = false;
+                btnComenzar.textContent = '▶ Comenzar Atención';
+            }
+            const timerText = document.getElementById('atencion-timer-text');
+            if (timerText) timerText.textContent = '00:00';
+        }
+
         function abrirModalAusente() {
             document.getElementById('ausente-comentario').value = '';
             document.getElementById('modal-ausente').classList.remove('hidden');
@@ -911,22 +1004,31 @@
                 const data = await res.json();
                 if (!res.ok) { showToast(data.error || 'No se pudo aceptar el turno.', 'error'); return; }
                 
-                procesarTurnoAceptado(data);
+                procesarTurnoAceptado(data, true); // autoStart = true: inicia timer directo
             } catch (e) {
                 showToast('Error de conexión.', 'error');
             }
         }
 
         // Helper para procesar la respuesta de aceptación (general o específica)
-        function procesarTurnoAceptado(data) {
+        function procesarTurnoAceptado(data, autoStart = false) {
             currentUsuarioId = data.usuario_id || null;
             document.getElementById('turno-codigo-actual').innerText = data.codigo_turno;
+            window._turnoActualId = data.turno_id || null;
             if (data.persona) {
                 document.getElementById('info-persona').innerText =
                     data.persona.nombres + ' · Doc: ' + data.persona.documento;
             }
             document.getElementById('card-turno-actual').classList.remove('hidden');
-            
+            resetAtencionTimer();
+
+            if (autoStart) {
+                // Desde ATENDER: ocultar botón "Comenzar Atención" e iniciar timer directo
+                const btnComenzar = document.getElementById('btn-comenzar-atencion');
+                if (btnComenzar) btnComenzar.classList.add('hidden');
+                _iniciarTimerAtencion();
+            }
+
             // Actualizar estado usando los datos completos si vienen, sino forzar 'ocupado'
             if (data.estado) {
                 actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
@@ -991,6 +1093,7 @@
                 }
 
                 document.getElementById('card-turno-actual').classList.add('hidden');
+                resetAtencionTimer();
                 
                 if (data.estado) {
                     actualizarEstadoUI(data.estado, data.ses_inicio, data.total_pausa_ms, data.en_pausa);
@@ -1117,7 +1220,6 @@
                                 class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#ffb500] text-[#0a0455] hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-yellow-700'}">
                                 ATENDER
                             </button>
-                            ${getLlamarBtn(t.id)}
                             </div>
                         </div>`;
                     }).join('');
@@ -1154,7 +1256,6 @@
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-red-800'}">
                                     ATENDER
                                 </button>
-                                ${getLlamarBtn(t.id)}
                                 </div>
                             </div>`;
                         }).join('');
@@ -1186,7 +1287,6 @@
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-slate-700 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-slate-900'}">
                                     ATENDER
                                 </button>
-                                ${getLlamarBtn(t.id)}
                             </div>
                         </div>`;
                     }).join('');
@@ -1218,7 +1318,6 @@
                                     class="${disabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:scale-105 cursor-pointer'} font-black py-2 px-4 rounded-lg text-xs uppercase transition-transform border-b-2 ${disabled ? 'border-gray-400' : 'border-blue-800'}">
                                     ATENDER
                                 </button>
-                                ${getLlamarBtn(t.id)}
                             </div>
                         </div>`;
                     }).join('');

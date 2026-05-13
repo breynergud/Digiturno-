@@ -358,7 +358,8 @@ class CoordinadorController extends Controller
                         'inicio' => Carbon::parse($atnc->atnc_hora_inicio)->format('d/m/Y h:i A'),
                         'espera' => $formatTime($espera),
                         'atencion' => $formatTime($atencion_tiempo),
-                        'estado' => $atnc->atnc_estado
+                        'estado' => $atnc->atnc_estado,
+                        'observacion' => $atnc->atnc_observacion,
                     ];
                 });
 

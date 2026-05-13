@@ -502,6 +502,7 @@ class AsesorController extends Controller
             return response()->json([
                 'success'      => true,
                 'codigo_turno' => $turno->tur_numero,
+                'turno_id'     => $turno->tur_id,
                 'usuario_id'   => $usuarioId,
                 'persona'      => $persona,
                 'ase_estado'   => 'ocupado',
